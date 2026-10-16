@@ -1,0 +1,61 @@
+node_modules
+
+# Output
+.output
+.vercel
+.netlify
+.wrangler
+/.svelte-kit
+/build
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.*
+!.env.example
+!.env.test
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# Cloudflare Worker local secrets
+**/.dev.vars
+**/.dev.vars.*
+
+
+# Environment variables and secrets
+.env
+.env.*
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example
+
+# Dependencies
+node_modules/
+**/node_modules/
+
+# SvelteKit and build output
+.svelte-kit/
+build/
+dist/
+.wrangler/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Local configuration
+*.local
+
+# Logs
+*.log
+
+
+# Local debugging and temporary backups
+dev-error-log.txt
+README.local-backup.md

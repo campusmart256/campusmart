@@ -1,0 +1,19 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "campusmart",
+	"main": ".svelte-kit/cloudflare/_worker.js",
+	"compatibility_date": "2026-08-01",
+	"compatibility_flags": ["nodejs_compat"],
+	"assets": {
+		"binding": "ASSETS",
+		"directory": ".svelte-kit/cloudflare"
+	},
+	"r2_buckets": [
+		{
+			// The photo storage. "bucket_name" must match the name you gave the bucket in Cloudflare.
+			"binding": "PHOTOS",
+			"bucket_name": "campusmart-photos"
+		}
+	],
+	"observability": { "enabled": true }
+}
