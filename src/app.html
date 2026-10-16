@@ -2,6 +2,23 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
+		<!-- Apply the saved theme before styles or Svelte hydrate to avoid a light-mode flash. -->
+		<script>
+			(function () {
+				var preference = 'light';
+				try {
+					var saved = localStorage.getItem('campusmart:theme:v1');
+					if (saved === 'dark' || saved === 'light' || saved === 'system') preference = saved;
+				} catch (error) {
+					// Storage can be unavailable in private browsing.
+				}
+				var dark = preference === 'dark' ||
+					(preference === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+				document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+				document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+			})();
+		</script>
+
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="theme-color" content="#C8102E" />
 		<link rel="preconnect" href="https://fonts.googleapis.com" />

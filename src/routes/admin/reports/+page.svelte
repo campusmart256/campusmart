@@ -184,4 +184,14 @@ function dateText(value) {
 		.grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 		.actions { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; }
 	}
+
+	/* Local component surfaces follow the global dark-theme toggle. */
+	:global(html[data-theme='dark']) .hero { background: linear-gradient(135deg,#222936,#30232d); border-color: rgba(255,255,255,.16); }
+	:global(html[data-theme='dark']) .hero h1, :global(html[data-theme='dark']) .empty h2 { color: #f6f7fb; }
+	:global(html[data-theme='dark']) .hero p:not(.eyebrow), :global(html[data-theme='dark']) .empty { color: #c0cada; }
+	:global(html[data-theme='dark']) .tabs a:not([aria-current='page']) { background:#252b38; color:#eef2f8; border-color:rgba(255,255,255,.18); }
+	:global(html[data-theme='dark']) .empty, :global(html[data-theme='dark']) .card { background:#1e2430; border-color:rgba(255,255,255,.16); color:#eef2f8; }
+	:global(html[data-theme='dark']) .card p { color:#c0cada; }
+	:global(html[data-theme='dark']) .listing-box, :global(html[data-theme='dark']) .grid div, :global(html[data-theme='dark']) .conversation { background:#252d3b; border-color:rgba(255,255,255,.14); color:#eef2f8; }
+	:global(html[data-theme='dark']) .dismiss { background:#344052; color:#eef2f8; }
 </style>

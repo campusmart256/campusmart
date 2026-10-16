@@ -3,7 +3,7 @@
 	import favicon from '#lib/assets/favicon.svg';
 	import { page } from '$app/state';
 	import { afterNavigate } from '$app/navigation';
-	import { tick } from 'svelte';
+	import { tick, onMount } from 'svelte';
 	import Logo from '#lib/components/Logo.svelte';
 	import Icon from '#lib/components/Icon.svelte';
 	import NavDrawer from '#lib/components/NavDrawer.svelte';
@@ -13,6 +13,47 @@
 
 	/** @type {{ data: any, children: import('svelte').Snippet }} */
 	let { data, children } = $props();
+
+	/** @type {'light' | 'dark' | 'system'} */
+	let themePreference = $state('light');
+	let themeMenuOpen = $state(false);
+	const themeChoices = /** @type {Array<'light' | 'dark' | 'system'>} */ (['light', 'dark', 'system']);
+
+	/** @param {'light' | 'dark' | 'system'} preference */
+	function applyTheme(preference) {
+		if (typeof window === 'undefined') return;
+		const dark = preference === 'dark' ||
+			(preference === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+		document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+		document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+	}
+
+	/** @param {'light' | 'dark' | 'system'} preference */
+	function setTheme(preference) {
+		themePreference = preference;
+		applyTheme(preference);
+		try { window.localStorage.setItem('campusmart:theme:v1', preference); } catch { /* Private browsing may restrict storage. */ }
+		themeMenuOpen = false;
+	}
+
+	onMount(() => {
+		let stored = null;
+		try { stored = window.localStorage.getItem('campusmart:theme:v1'); } catch { /* Storage may be unavailable. */ }
+		themePreference = stored === 'dark' || stored === 'system' || stored === 'light' ? stored : 'light';
+		applyTheme(themePreference);
+		const media = window.matchMedia('(prefers-color-scheme: dark)');
+		const onSystemChange = () => { if (themePreference === 'system') applyTheme('system'); };
+		/** @param {StorageEvent} event */
+		const onStorage = (event) => {
+			if (event.key !== 'campusmart:theme:v1') return;
+			const next = event.newValue;
+			themePreference = next === 'dark' || next === 'system' || next === 'light' ? next : 'light';
+			applyTheme(themePreference);
+		};
+		media.addEventListener('change', onSystemChange);
+		window.addEventListener('storage', onStorage);
+		return () => { media.removeEventListener('change', onSystemChange); window.removeEventListener('storage', onStorage); };
+	});
 
 	let menuOpen = $state(false);
 	let scrollY = $state(0);
@@ -58,7 +99,7 @@
 	<title>campusmart</title>
 </svelte:head>
 
-<svelte:window bind:scrollY onscroll={handleScroll} />
+<svelte:window bind:scrollY onscroll={handleScroll} onkeydown={(event) => { if (event.key === 'Escape') themeMenuOpen = false; }} />
 
 <DesktopSidebar user={data.user} profile={data.profile} isStaff={data.isStaff} pathname={page.url.pathname} unreadMessages={data.unreadMessages ?? 0} pendingVerificationRequests={data.pendingVerificationRequests ?? 0} savedPriceDropAlerts={data.savedPriceDropAlerts ?? 0} />
 
@@ -67,8 +108,20 @@
 	<button class="menu" type="button" aria-label="Open menu" aria-haspopup="dialog" aria-expanded={menuOpen} aria-controls="site-menu" bind:this={menuBtn} onclick={() => (menuOpen = true)}>
 		<Icon name="menu" />
 	</button>
-	<span class="brand-mark"><Logo height={26} /></span>
+	<Logo height={26} />
 	<span class="grow"></span>
+	<div class="theme-picker">
+		<button class="theme-toggle" type="button" aria-label={`Appearance: ${themePreference}. Choose theme`} aria-haspopup="true" aria-expanded={themeMenuOpen} onclick={() => (themeMenuOpen = !themeMenuOpen)}>
+			<span aria-hidden="true">{themePreference === 'dark' ? '☾' : themePreference === 'system' ? '◐' : '☀'}</span>
+		</button>
+		{#if themeMenuOpen}
+			<div class="theme-options" role="group" aria-label="Appearance preference">
+				{#each themeChoices as choice}
+					<button type="button" class:chosen={themePreference === choice} aria-pressed={themePreference === choice} onclick={() => setTheme(choice)}>{choice === 'light' ? '☀ Light' : choice === 'dark' ? '☾ Dark' : '◐ System'}</button>
+				{/each}
+			</div>
+		{/if}
+	</div>
 	<a class="sell" href="/sell"><Icon name="plus" size={18} /><span class="long">Sell an item</span><span class="short">Sell</span></a>
 	{#if data.user}
 		<a class="me" href="/account" aria-label="My account"><Avatar path={data.profile?.avatar_path} name={data.profile?.display_name ?? data.user?.email} size={40} /></a>
@@ -101,6 +154,15 @@
 	}
 	@media (prefers-reduced-motion: reduce) { .top { transition: none; } }
 	.grow { flex: 1; }
+	.theme-picker { position: relative; flex: none; }
+	.theme-toggle { width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 14px; background: rgba(255,255,255,.25); color: var(--ink); cursor: pointer; -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+	.theme-toggle:focus-visible, .theme-options button:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+	.theme-options { position: absolute; top: calc(100% + 8px); right: 0; z-index: 50; min-width: 146px; display: grid; gap: 3px; padding: 7px; border-radius: 16px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); box-shadow: 0 14px 35px rgba(0,0,0,.18); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); }
+	.theme-options button { min-height: 38px; text-align: left; border: 0; background: transparent; color: inherit; padding: 7px 10px; border-radius: 10px; cursor: pointer; font: inherit; font-size: 13px; }
+	.theme-options button:hover, .theme-options button.chosen { background: rgba(200,16,46,.12); }
+	:global(html[data-theme='dark']) .theme-toggle { background: rgba(255,255,255,.09); border-color: rgba(255,255,255,.24); color: #fff; }
+	:global(html[data-theme='dark']) .theme-options { background: rgba(14,14,14,.94); border-color: rgba(255,255,255,.23); color: #fff; }
+	:global(html[data-theme='dark']) .theme-options button:hover, :global(html[data-theme='dark']) .theme-options button.chosen { background: rgba(255,255,255,.14); }
 	.menu { width: 44px; height: 44px; margin-left: -6px; border: 0; background: none; border-radius: 50%; color: var(--ink); display: flex; align-items: center; justify-content: center; cursor: pointer; flex: none; }
 	.menu:hover { background: #f4eeec; }
 	.sell { display: inline-flex; align-items: center; gap: 6px; background: var(--red); color: #fff; border-radius: 10px; padding: 0 12px; min-height: 40px; font-size: 14px; white-space: nowrap; }

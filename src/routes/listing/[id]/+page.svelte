@@ -457,4 +457,11 @@
 		.photo-arrow { width: 40px; height: 40px; }
 	}
 	@media (prefers-reduced-motion: reduce) { .photo-arrow, .thumb { transition: none; } }
+
+	/* Listing detail wrapper was independently hardcoded to a light canvas. */
+	:global(html[data-theme='dark']) .wrap { background:#101116; color:#f5f7fb; }
+	:global(html[data-theme='dark']) .gallery-frame { background:#1c2230; border-color:rgba(255,255,255,.14); }
+	:global(html[data-theme='dark']) .item-summary, :global(html[data-theme='dark']) .description-section, :global(html[data-theme='dark']) .action-card, :global(html[data-theme='dark']) .seller-card, :global(html[data-theme='dark']) .feedback-card, :global(html[data-theme='dark']) .review-card, :global(html[data-theme='dark']) .report-card { background:#1e2430; border-color:rgba(255,255,255,.15); }
+	:global(html[data-theme='dark']) .item-summary h1, :global(html[data-theme='dark']) .description-section h2, :global(html[data-theme='dark']) .feedback-card h2, :global(html[data-theme='dark']) .review-card h2, :global(html[data-theme='dark']) .price, :global(html[data-theme='dark']) .similar-heading h2 { color:#f5f7fb; }
+	:global(html[data-theme='dark']) .item-facts, :global(html[data-theme='dark']) .description { color:#c3ccdc; }
 </style>

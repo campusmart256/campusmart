@@ -110,4 +110,47 @@
 		.bottom { background: #fff; -webkit-backdrop-filter: none; backdrop-filter: none; }
 	}
 	@media (prefers-reduced-motion: reduce) { .bottom, a { transition: none; } }
+
+	/* Phase 64.4: dark-only Liquid Glass material.
+	   Keep swipe-linked geometry and timing exactly as in light mode. */
+	:global(html[data-theme='dark']) .bottom {
+		background: rgba(30, 33, 43, calc(.85 - .25 * var(--shrink, 0)));
+		border-color: rgba(232, 237, 248, calc(.22 - .06 * var(--shrink, 0)));
+		box-shadow: 0 12px 34px rgba(0, 0, 0, .45), 0 2px 10px rgba(0, 0, 0, .24), inset 0 1px 0 rgba(255, 255, 255, .13);
+	}
+	:global(html[data-theme='dark']) .bottom a:not(.sellfab) { color: #c2c9d7; }
+	:global(html[data-theme='dark']) .bottom a:not(.sellfab):hover {
+		background: rgba(255, 137, 174, .11);
+		color: #ffabc3;
+	}
+	:global(html[data-theme='dark']) .bottom a[aria-current='page']:not(.sellfab) {
+		background: rgba(255, 137, 174, .15);
+		color: #ff9fbc;
+	}
+	:global(html[data-theme='dark']) .bottom .badge {
+		background: #e32a60;
+		color: #fff;
+		border-color: #252934;
+	}
+	:global(html[data-theme='dark']) .bottom .sellfab {
+		background: #d31e50;
+		color: #fff;
+		border-color: rgba(255, 200, 218, .25);
+		box-shadow: 0 9px 24px rgba(183, 16, 65, .37), inset 0 1px 0 rgba(255, 255, 255, .17);
+	}
+	:global(html[data-theme='dark']) .bottom .sellfab:hover,
+	:global(html[data-theme='dark']) .bottom .sellfab[aria-current='page'] {
+		background: #b61442;
+		color: #fff;
+	}
+	@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+		:global(html[data-theme='dark']) .bottom { background: rgba(30, 33, 43, .97); }
+	}
+	@media (prefers-reduced-transparency: reduce) {
+		:global(html[data-theme='dark']) .bottom {
+			background: #1c1f28;
+			-webkit-backdrop-filter: none;
+			backdrop-filter: none;
+		}
+	}
 </style>

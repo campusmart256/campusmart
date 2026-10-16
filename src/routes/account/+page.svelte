@@ -341,4 +341,18 @@
 	}
 	@media (max-width:345px) { .account-shortcuts { grid-template-columns:1fr; } }
 
+
+	/* Theme-aware profile identity and preference shortcuts. */
+	:global(html[data-theme='dark']) .account-workspace { --account-ink:#f5f7fb; }
+	:global(html[data-theme='dark']) .account-identity { background:#1e2430; border-color:rgba(255,255,255,.17); }
+	:global(html[data-theme='dark']) .account-display-name { color:#f5f7fb; }
+	:global(html[data-theme='dark']) .identity-campus { color:#d5a6b4; }
+	:global(html[data-theme='dark']) .identity-status { border-color:rgba(255,255,255,.14); }
+	:global(html[data-theme='dark']) .identity-status a { color:#ffa3be; }
+	:global(html[data-theme='dark']) .identity-avatar { background:#293140; border-color:#293140; }
+	:global(html[data-theme='dark']) .account-shortcuts a, :global(html[data-theme='dark']) .account-form, :global(html[data-theme='dark']) .verification-card { background:#202735; border-color:rgba(255,255,255,.15); color:#eef2f8; }
+	:global(html[data-theme='dark']) .account-shortcuts a:hover { background:#30394a; }
+	:global(html[data-theme='dark']) .account-shortcuts strong, :global(html[data-theme='dark']) .account-workspace .section-title { color:#f5f7fb; }
+	:global(html[data-theme='dark']) .account-shortcuts small { color:#bbc6d7; }
+	:global(html[data-theme='dark']) .doc-field input[type='file'] { background:#283140; color:#f5f7fb; }
 </style>

@@ -711,3 +711,713 @@ body {
   .app-shell .home-page .search { border: 1px solid CanvasText !important; box-shadow: none !important; }
   .app-shell .home-page .cat:focus-visible { outline-color: Highlight; }
 }
+
+
+/* =====================================================================
+   Phase 64.3 — opt-in near-black Liquid Glass foundations.
+   Activated only by <html data-theme="dark">. The existing light design
+   remains untouched. Per-route scoped CSS will be audited incrementally.
+   ===================================================================== */
+html[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #101116;
+  --ink: #f5f6fa;
+  --body: #e2e5ec;
+  --mute: #adb6c6;
+  --line: rgba(255,255,255,.17);
+  --red: #fa638c;
+  --red-dark: #d83c69;
+  --glass-ink: #f5f6fa;
+  --glass-edge: rgba(255,255,255,.18);
+  --glass-shadow: 0 14px 38px rgba(0,0,0,.36), inset 0 1px rgba(255,255,255,.12);
+  --glass-shadow-hover: 0 20px 45px rgba(0,0,0,.48), inset 0 1px rgba(255,255,255,.17);
+  --liquid-stroke: rgba(255,255,255,.23);
+  --liquid-rim: rgba(255,255,255,.13);
+  --liquid-depth: 0 18px 38px rgba(0,0,0,.45), inset 0 1px rgba(255,255,255,.15);
+  --premium-edge: rgba(255,255,255,.24);
+  --premium-outline: #ff88ab;
+  --teal-bg: #092d29;
+  --teal-ink: #8de6d7;
+  --amber-bg: #30200e;
+  --amber-ink: #ffcb83;
+  --err-bg: #39141e;
+  --err-ink: #ff9aac;
+}
+
+html[data-theme='dark'],
+html[data-theme='dark'] body {
+  background: #101116 !important;
+  background-image: none !important;
+  color: var(--ink);
+}
+html[data-theme='dark'] .app-shell,
+html[data-theme='dark'] .app-shell > main {
+  background-color: #101116;
+  background-image: none !important;
+  color: var(--ink);
+}
+html[data-theme='dark'] :is(.muted,.switch-row .help) { color: var(--mute); }
+
+/* Existing cards keep their radii, spacing and blur; only the material changes. */
+html[data-theme='dark'] :is(.card,.lcard,.tag,.chip span,.slot,.btn.btn2) {
+  background-color: rgba(27,27,31,.72);
+  border-color: rgba(255,255,255,.17);
+  color: var(--ink);
+}
+html[data-theme='dark'] .app-shell :is(
+  .card,.lcard,.benefits,.cat,.empty-state,
+  .dashboard-metric,.dashboard-panel,.dashboard-mini-strip,
+  .account-shortcuts > a,.account-form,.verification-card,
+  .inbox-controls,.conversation-list > a,.inbox-empty,
+  .gallery-frame,.item-summary,.description-section,.action-card,
+  .feedback-card,.saved-filters,.comparison,.inventory-tools,
+  .inventory-overview,.sales-tools,.sales-overview,.sale-entry,
+  .contact-dialog,.search
+) {
+  background-color: rgba(28,31,39,.82) !important;
+  border-color: rgba(255,255,255,.19) !important;
+  color: var(--ink);
+  box-shadow: var(--liquid-depth);
+}
+html[data-theme='dark'] .app-shell :is(
+  .card,.lcard,.benefits,.cat,.dashboard-metric,.saved-filters,.comparison
+) {
+  -webkit-backdrop-filter: blur(16px) saturate(120%);
+  backdrop-filter: blur(16px) saturate(120%);
+}
+html[data-theme='dark'] .app-shell .saved-card-wrap .lcard {
+  background: rgba(28,31,39,.9) !important;
+  border-color: rgba(255,255,255,.18) !important;
+  box-shadow: var(--liquid-depth);
+}
+html[data-theme='dark'] .app-shell .saved-card-wrap .lcard :is(.ttl,.price) { color: #f5f6fa; }
+html[data-theme='dark'] .app-shell .saved-card-wrap .lcard :is(.toprow,.by) { color: #b3bdcd; }
+html[data-theme='dark'] .app-shell .saved-card-wrap .lcard .tag {
+  color: #93e8d6;
+  border-color: rgba(117,232,207,.35);
+  background: rgba(18,78,68,.55);
+}
+html[data-theme='dark'] .app-shell .saved-card-wrap :is(.save-control button,.save-control.guest) {
+  background: rgba(38,38,44,.88);
+  border-color: rgba(255,255,255,.2);
+  color: #f5f6fa;
+}
+html[data-theme='dark'] .app-shell .saved-card-wrap .save-control button.saved {
+  background: rgba(104,18,49,.72);
+  color: #ffb6ca;
+}
+
+/* Glass controls retain their shapes and focus behavior. */
+html[data-theme='dark'] .app-shell :is(
+  input:not([type='checkbox']):not([type='radio']):not([type='file']):not([type='hidden']),
+  textarea,select
+),
+html[data-theme='dark'] :is(.field input,.field textarea,.field select) {
+  background-color: rgba(30,30,36,.86);
+  border-color: rgba(255,255,255,.22);
+  color: #f5f6fa;
+}
+html[data-theme='dark'] input::placeholder,
+html[data-theme='dark'] textarea::placeholder { color: #a6afbe; }
+html[data-theme='dark'] .app-shell :is(.tag,.chip span,.verified-filter,.sort select,.active-filters a) {
+  background-color: rgba(36,36,42,.76);
+  border-color: rgba(255,255,255,.2);
+  color: var(--ink);
+}
+html[data-theme='dark'] .app-shell .btn.btn2 {
+  background-color: rgba(37,37,44,.84);
+  border-color: rgba(250,99,140,.55);
+  color: #ff9fbc;
+}
+html[data-theme='dark'] .app-shell .btn.btn2:hover { background-color: rgba(67,39,50,.9); }
+
+/* Keep the branded hero intact; convert discovery glass without a gray canvas. */
+html[data-theme='dark'] .app-shell .home-page .discovery {
+  background: linear-gradient(145deg,rgba(23,23,29,.9),rgba(9,9,12,.96));
+  border-color: rgba(255,255,255,.17);
+  box-shadow: 0 18px 46px rgba(0,0,0,.48),inset 0 1px rgba(255,255,255,.12);
+}
+html[data-theme='dark'] .app-shell .home-page .discovery::before,
+html[data-theme='dark'] .app-shell .home-page .discovery::after { opacity: .22; }
+html[data-theme='dark'] .app-shell .home-page :is(.cat,.benefits) {
+  background: rgba(35,35,41,.68) !important;
+  border-color: rgba(255,255,255,.19) !important;
+}
+html[data-theme='dark'] .app-shell .home-page .cat.on {
+  background: rgba(107,27,54,.64) !important;
+  border-color: rgba(250,99,140,.5) !important;
+  color: #ffd1df;
+}
+html[data-theme='dark'] .app-shell .home-page .cat .cat-icon {
+  background: rgba(255,255,255,.11);
+  border-color: rgba(255,255,255,.18);
+}
+html[data-theme='dark'] .app-shell .home-page .search {
+  background: rgba(27,31,40,.82) !important;
+  background-image: linear-gradient(155deg,rgba(255,255,255,.09),transparent) !important;
+  border-color: rgba(255,255,255,.2) !important;
+  box-shadow: 0 12px 30px rgba(0,0,0,.42),inset 0 1px rgba(255,255,255,.16);
+}
+html[data-theme='dark'] .app-shell .home-page .search:focus-within { background-color: rgba(39,39,47,.92) !important; }
+html[data-theme='dark'] .app-shell .home-page .search input[type='search'] { color: #fff !important; }
+html[data-theme='dark'] .app-shell .home-page .search input[type='search']::placeholder { color: #acb4c2; }
+html[data-theme='dark'] .app-shell .top,
+html[data-theme='dark'] .app-shell .top.scrolled {
+  background: rgba(18,18,22,.56);
+  border-color: rgba(255,255,255,.18);
+  box-shadow: 0 8px 25px rgba(0,0,0,.38),inset 0 1px rgba(255,255,255,.13);
+}
+html[data-theme='dark'] .desktop-side .campus {
+  background: rgba(28,28,34,.7);
+  border-color: rgba(255,255,255,.18);
+  box-shadow: inset 0 1px rgba(255,255,255,.12);
+}
+html[data-theme='dark'] .app-shell .home-page :is(.discovery-heading h2,.browse-heading h2,.listings-heading h2,.results-intro h1) {
+  color: #f6f7fb;
+}
+
+/* User accessibility choices take priority over visual glass effects. */
+@media (prefers-reduced-transparency: reduce) {
+  html[data-theme='dark'] .app-shell :is(.card,.lcard,.cat,.benefits,.search,.saved-filters,.comparison),
+  html[data-theme='dark'] .app-shell .home-page :is(.cat,.search,.benefits),
+  html[data-theme='dark'] .app-shell .saved-card-wrap .lcard {
+    background: #1a1a1d !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+  html[data-theme='dark'] body { background: #101116 !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme='dark'] .app-shell :is(.card,.lcard,.cat,.search) { transition: none !important; }
+}
+
+/* Phase 64.3: dark canvas, legible navigation and layered neutral glass.
+   Scoped to the chosen dark theme; does not change sizes or scroll transforms. */
+html[data-theme='dark'] {
+  --dark-canvas: #101116;
+  --dark-panel: #191c24;
+  --dark-glass: rgba(33,37,47,.76);
+  --dark-border: rgba(224,232,247,.16);
+  --dark-primary-text: #f4f6fb;
+  --dark-secondary-text: #b8c2d2;
+  --dark-pink: #ff88ad;
+}
+html[data-theme='dark'] :is(body,.app-shell,.app-shell > main) {
+  background-color: var(--dark-canvas) !important;
+  background-image: none !important;
+}
+html[data-theme='dark'] .app-shell > main {
+  color: var(--dark-primary-text);
+}
+/* The desktop sidebar was still rendered white with pale text. */
+html[data-theme='dark'] .desktop-side {
+  background: rgba(22,25,33,.94) !important;
+  border-color: var(--dark-border) !important;
+  color: var(--dark-primary-text);
+}
+html[data-theme='dark'] .desktop-side :is(a,button,h1,h2,h3,strong) {
+  color: var(--dark-primary-text);
+}
+html[data-theme='dark'] .desktop-side :is(.muted,small) {
+  color: var(--dark-secondary-text);
+}
+html[data-theme='dark'] .desktop-side .campus {
+  color: var(--dark-primary-text);
+  background: var(--dark-glass) !important;
+  border-color: var(--dark-border) !important;
+}
+/* Readable product values and secondary labels, without recoloring badges or banners. */
+html[data-theme='dark'] .app-shell :is(.price,.item-summary h1,.item-summary h2,.item-summary strong,.action-card h2,.action-card h3,.action-card .price,.description-section h2,.feedback-card h2) {
+  color: var(--dark-primary-text);
+}
+html[data-theme='dark'] .app-shell :is(.muted,.listing-count,.item-summary .muted,.description-section .muted) {
+  color: var(--dark-secondary-text);
+}
+/* Frosted surfaces: deeper than the canvas, with a soft glass rim. */
+html[data-theme='dark'] .app-shell :is(.card,.lcard,.item-summary,.action-card,.description-section,.feedback-card,.saved-filters,.comparison) {
+  background-color: var(--dark-glass) !important;
+  border-color: var(--dark-border) !important;
+}
+html[data-theme='dark'] .app-shell .home-page .discovery {
+  background: linear-gradient(145deg,rgba(30,34,44,.96),rgba(17,19,25,.95));
+}
+/* Keep browser-native controls readable in dark mode. */
+html[data-theme='dark'] :is(input,select,textarea) { color-scheme: dark; }
+html[data-theme='dark'] .app-shell :is(input,select,textarea) {
+  color: var(--dark-primary-text);
+}
+@media (prefers-reduced-transparency:reduce) {
+  html[data-theme='dark'] .app-shell :is(.card,.lcard,.item-summary,.action-card,.description-section,.feedback-card,.saved-filters,.comparison) {
+    background: var(--dark-panel) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+
+
+/* =====================================================================
+   Phase 64.4 — Dark-mode consistency and adaptive contrast.
+   Only active for <html data-theme="dark">. Preserve light-mode UI,
+   navy promotional heroes, CTA buttons and product photographs.
+   ===================================================================== */
+html[data-theme='dark'] {
+  --bg-app: #101116;
+  --bg-surface: #191d27;
+  --bg-surface-raised: #242a38;
+  --text-primary: #f5f7fc;
+  --text-secondary: #d0d8e5;
+  --text-muted: #acb7ca;
+  --surface-stroke: rgba(219,231,252,.16);
+  --surface-glass: rgba(30,36,49,.84);
+  --glass-ink: var(--text-primary);
+  --dark-canvas: var(--bg-app);
+  --dark-primary-text: var(--text-primary);
+  --dark-secondary-text: var(--text-secondary);
+  --ink: var(--text-primary);
+  --body: var(--text-secondary);
+  --mute: var(--text-muted);
+}
+
+/* Remove the light canvas in the desktop center, not only the body. */
+html[data-theme='dark'],
+html[data-theme='dark'] body,
+html[data-theme='dark'] #svelte,
+html[data-theme='dark'] .app-shell,
+html[data-theme='dark'] .app-shell > main,
+html[data-theme='dark'] .app-shell :is(
+  .main-content,.main-panel,.content-area,.content-panel,
+  .page-content,.desktop-main,.desktop-content,.marketplace-main,
+  .marketplace-content,.item-page,.item-page-content,.home-page
+) {
+  background-color: var(--bg-app) !important;
+  color: var(--text-primary);
+}
+html[data-theme='dark'] body,
+html[data-theme='dark'] .app-shell > main {
+  background-image: none !important;
+}
+
+/* General content text. Avoid forcing all descendant text white: dark hero
+   artwork, colored chips, warning banners and active buttons need contrast. */
+html[data-theme='dark'] .app-shell :is(
+  .page,.page.wide,.page-title,.section-title,.results-intro,
+  .listing-title,.item-title,.content-title,.price,
+  .lcard .ttl,.lcard .price,.item-summary h1,.item-summary h2,
+  .description-section h2,.feedback-card h2,.action-card h2,
+  .action-card h3
+) { color: var(--text-primary); }
+html[data-theme='dark'] .app-shell :is(
+  .muted,.subtitle,.description,.helper-text,.supporting-text,
+  .listing-count,.lcard .by,.lcard .toprow,.item-summary .muted,
+  .description-section .muted,.breadcrumb,.breadcrumbs,
+  .benefits p,.benefits small
+) { color: var(--text-secondary); }
+html[data-theme='dark'] .app-shell :is(
+  .home-page .benefits,.home-page .benefits p,
+  .home-page .benefits small,.home-page .benefits strong,
+  .home-page .benefits h2,.home-page .benefits h3,
+  .home-page .cat:not(.on),.home-page .cat:not(.on) :is(span,small,strong),
+  .item-summary,.description-section,.feedback-card
+) { color: var(--text-secondary); }
+html[data-theme='dark'] .app-shell .home-page .benefits :is(h2,h3,strong),
+html[data-theme='dark'] .app-shell .home-page .cat:not(.on) strong {
+  color: var(--text-primary);
+}
+
+/* Glass panels: higher contrast without losing the established radii/blur. */
+html[data-theme='dark'] .app-shell :is(
+  .card,.lcard,.benefits,.cat,.empty-state,.dashboard-metric,
+  .dashboard-panel,.dashboard-mini-strip,.account-shortcuts > a,
+  .account-form,.verification-card,.inbox-controls,
+  .conversation-list > a,.inbox-empty,.item-summary,
+  .description-section,.action-card,.feedback-card,.saved-filters,
+  .comparison,.inventory-tools,.inventory-overview,
+  .sales-tools,.sales-overview,.sale-entry,.contact-dialog
+) {
+  background-color: var(--surface-glass) !important;
+  border-color: var(--surface-stroke) !important;
+}
+/* The older mobile rule sets listing cards white with !important. */
+html[data-theme='dark'] .app-shell .saved-card-wrap .lcard {
+  background-color: var(--surface-glass) !important;
+  border-color: var(--surface-stroke) !important;
+}
+html[data-theme='dark'] .app-shell .home-page :is(.cat,.benefits) {
+  background-color: var(--surface-glass) !important;
+  border-color: var(--surface-stroke) !important;
+}
+html[data-theme='dark'] .app-shell .home-page .cat.on {
+  background-color: rgba(107,27,54,.70) !important;
+  color: #ffe2eb;
+}
+html[data-theme='dark'] .app-shell .home-page .cat.on :is(span,strong,small) {
+  color: #ffe2eb;
+}
+
+/* Form text and placeholder values. Preserve the transparent search input. */
+html[data-theme='dark'] .app-shell :is(input,select,textarea) {
+  color: var(--text-primary);
+  border-color: var(--surface-stroke);
+}
+html[data-theme='dark'] .app-shell :is(input,textarea)::placeholder {
+  color: var(--text-muted);
+  opacity: 1;
+}
+html[data-theme='dark'] .app-shell .home-page .search input[type='search'] {
+  color: var(--text-primary) !important;
+  background-color: transparent !important;
+}
+html[data-theme='dark'] .app-shell .home-page .search input[type='search']::placeholder {
+  color: var(--text-muted);
+}
+
+/* Neutral secondary chips: primary pink CTA and semantic status colors stay. */
+html[data-theme='dark'] .app-shell :is(.tag,.chip span,.verified-filter,.sort select) {
+  background-color: rgba(36,43,57,.88);
+  border-color: var(--surface-stroke);
+  color: var(--text-primary);
+}
+html[data-theme='dark'] .app-shell .chip input:checked + span {
+  background-color: var(--red);
+  border-color: var(--red);
+  color: #fff;
+}
+
+/* Brand-mark edges: ensure the img is contained by its icon frame.
+   White pixels baked into the actual PNG require a transparent export;
+   CSS cannot genuinely remove them without changing the artwork. */
+html[data-theme='dark'] .app-shell :is(.brand-mark,.brand-icon,.logo-mark,.brand-logo-wrap) {
+  background-color: rgba(35,41,54,.66);
+  border-color: var(--surface-stroke);
+  overflow: hidden;
+}
+html[data-theme='dark'] .app-shell :is(.brand-logo,.brand-mark img,.brand-icon img,.logo-mark img) {
+  background: transparent;
+  display: block;
+}
+
+/* Accessibility fallback must never switch dark glass back to white. */
+@media (prefers-reduced-transparency: reduce) {
+  html[data-theme='dark'] .app-shell :is(
+    .card,.lcard,.benefits,.cat,.empty-state,.dashboard-metric,
+    .dashboard-panel,.dashboard-mini-strip,.account-shortcuts > a,
+    .account-form,.verification-card,.inbox-controls,
+    .conversation-list > a,.inbox-empty,.item-summary,
+    .description-section,.action-card,.feedback-card,.saved-filters,
+    .comparison,.inventory-tools,.inventory-overview,
+    .sales-tools,.sales-overview,.sale-entry,.contact-dialog,.search
+  ),
+  html[data-theme='dark'] .app-shell .saved-card-wrap .lcard {
+    background-color: var(--bg-surface) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+
+/* =====================================================================
+   Phase 64.5 — Universal dark canvas, including listing detail routes.
+   Applies only after the user's theme switch sets data-theme="dark".
+   Leaves the branded navy hero, photos and colored status banners intact.
+   ===================================================================== */
+html[data-theme='dark'] {
+  --route-canvas: #101116;
+  --route-surface: #1b202b;
+  --route-ink: #f5f7fc;
+  --route-subtext: #c3cddd;
+  --route-muted: #aebbd0;
+}
+
+/* Item routes often have their own wrapper or nested <main>, separate
+   from the app-shell's immediate main; both must follow the theme. */
+html[data-theme='dark'] :is(body, #svelte, .app-shell),
+html[data-theme='dark'] .app-shell main,
+html[data-theme='dark'] .app-shell :is(
+  .page, .page.wide, .page-shell, .page-content,
+  .main-content, .main-panel, .content-area, .content-panel,
+  .desktop-main, .desktop-content, .center-panel,
+  .listing-page, .listing-detail, .listing-detail-page,
+  .listing-details, .listing-content, .listing-main,
+  .listing-view, .item-page, .item-page-content,
+  .item-detail, .item-details, .item-detail-page,
+  .marketplace-main, .marketplace-content
+) {
+  background-color: var(--route-canvas) !important;
+  color: var(--route-ink);
+}
+/* Prevent the older pale ambient gradients from sitting over dark canvas. */
+html[data-theme='dark'] .app-shell main,
+html[data-theme='dark'] .app-shell :is(
+  .page-shell, .page-content, .main-content, .main-panel,
+  .content-area, .content-panel, .listing-page,
+  .listing-detail, .listing-detail-page, .item-page,
+  .item-detail, .item-detail-page
+) {
+  background-image: none !important;
+}
+/* Dark text in the image/details metadata had been inherited from light mode. */
+html[data-theme='dark'] .app-shell :is(
+  .breadcrumb, .breadcrumbs, .breadcrumb-nav,
+  .listing-breadcrumb, .item-breadcrumb, .crumbs,
+  .item-meta, .listing-meta, .item-summary .muted,
+  .item-summary .meta, .description-section .muted,
+  .listing-count
+) { color: var(--route-subtext) !important; }
+html[data-theme='dark'] .app-shell :is(
+  .breadcrumb, .breadcrumbs, .breadcrumb-nav,
+  .listing-breadcrumb, .item-breadcrumb, .crumbs
+) :is(a, span) { color: var(--route-muted); }
+html[data-theme='dark'] .app-shell :is(
+  .item-summary, .item-details, .description-section,
+  .feedback-card, .action-card, .listing-details
+) :is(h1, h2, h3, strong) { color: var(--route-ink); }
+/* Keep an item-details information panel dark, without altering photos. */
+html[data-theme='dark'] .app-shell :is(
+  .item-summary, .item-details, .item-info, .details-panel,
+  .description-section, .feedback-card, .action-card
+) {
+  background-color: var(--route-surface) !important;
+  border-color: rgba(225,235,255,.16) !important;
+}
+/* Preserve the photograph's intrinsic white background: don't darken images. */
+html[data-theme='dark'] .app-shell :is(
+  .gallery-frame img, .gallery img, .listing-thumb, .lcard .pic img
+) { filter: none; }
+/* Reduced-transparency preference must not restore a light page background. */
+@media (prefers-reduced-transparency: reduce) {
+  html[data-theme='dark'] .app-shell :is(
+    .item-summary, .item-details, .item-info, .details-panel,
+    .description-section, .feedback-card, .action-card
+  ) { background-color: var(--route-surface) !important; }
+}
+
+/* =====================================================================
+   Phase 64.6 — Listing route canvas and mobile navigation drawer repair.
+   Activated only by html[data-theme='dark']; light mode is unaffected.
+   The real product photo remains unaltered, including its white pixels.
+   ===================================================================== */
+html[data-theme='dark'] {
+  --cm-canvas: #101116;
+  --cm-raised: #1b202b;
+  --cm-drawer: #171a22;
+  --cm-text: #f5f7fc;
+  --cm-subtext: #c0cada;
+  --cm-stroke: rgba(225,235,255,.15);
+}
+
+/* Theme the route-level container, not just the header/sidebar. */
+html[data-theme='dark'] :is(html,body,#svelte),
+html[data-theme='dark'] .app-shell,
+html[data-theme='dark'] .app-shell > main,
+html[data-theme='dark'] .app-shell > main > :is(div,section,article),
+html[data-theme='dark'] .app-shell main :is(
+  .page,.page.wide,.page-shell,.page-content,.main-content,
+  .content-wrapper,.content-area,.desktop-main,.desktop-content,
+  .listing-page,.listing-detail-page,.listing-detail,.listing-content,
+  .listing-main,.listing-view,.item-page,.item-page-content,.item-detail,
+  .item-detail-page,.marketplace-main,.marketplace-content
+) {
+  background-color: var(--cm-canvas) !important;
+  color: var(--cm-text);
+}
+html[data-theme='dark'] .app-shell > main,
+html[data-theme='dark'] .app-shell > main > :is(div,section,article),
+html[data-theme='dark'] .app-shell main :is(
+  .page-shell,.page-content,.main-content,.content-wrapper,
+  .content-area,.listing-page,.listing-detail,.listing-detail-page,
+  .item-page,.item-detail,.item-detail-page
+) { background-image: none !important; }
+
+/* Some Svelte detail views render route wrappers outside the usual shell. */
+html[data-theme='dark'] #svelte > :is(main,div.app-shell,div.layout),
+html[data-theme='dark'] :is(.listing-detail-page,.item-detail-page,.listing-page) {
+  background-color: var(--cm-canvas) !important;
+}
+
+/* Match the photographed gap above and beside the detail gallery, but keep
+   the image/gallery itself intact and photo arrows legible. */
+html[data-theme='dark'] .app-shell :is(
+  .gallery-section,.gallery-wrapper,.gallery-container,.gallery-thumbnails,
+  .thumbnail-strip,.thumb-strip,.listing-gallery-wrap,.listing-gallery,
+  .listing-photos,.item-gallery-wrap,.item-gallery,.photo-gallery,
+  .photo-section,.item-content,.details-layout,.item-layout
+) { background-color: var(--cm-canvas) !important; }
+html[data-theme='dark'] .app-shell :is(.breadcrumb,.breadcrumbs,.crumbs,.breadcrumb-nav),
+html[data-theme='dark'] .app-shell :is(.breadcrumb,.breadcrumbs,.crumbs,.breadcrumb-nav) :is(a,span) {
+  color: var(--cm-subtext) !important;
+}
+
+/* Mobile slide-out navigation: override white panel backgrounds left over
+   from light-mode component styles. The desktop sidebar is unchanged. */
+@media (max-width: 899px) {
+  html[data-theme='dark'] .app-shell :is(
+    .mobile-side,.mobile-sidebar,.mobile-drawer,.sidebar-drawer,
+    .nav-drawer,.drawer-panel,.drawer-content,.drawer-menu,
+    .mobile-menu-panel,.mobile-nav-panel,.mobile-side-panel,
+    .side-menu,.side-panel,.offcanvas,.offcanvas-panel
+  ),
+  html[data-theme='dark'] .app-shell :is([role='dialog'][aria-modal='true']) :is(aside,nav),
+  html[data-theme='dark'] .app-shell :is(aside.mobile,aside.drawer) {
+    background: var(--cm-drawer) !important;
+    background-image: none !important;
+    border-color: var(--cm-stroke) !important;
+    color: var(--cm-text) !important;
+  }
+  html[data-theme='dark'] .app-shell :is(
+    .mobile-side,.mobile-sidebar,.mobile-drawer,.sidebar-drawer,
+    .nav-drawer,.drawer-panel,.drawer-content,.drawer-menu,
+    .mobile-menu-panel,.mobile-nav-panel,.mobile-side-panel,
+    .side-menu,.side-panel,.offcanvas,.offcanvas-panel
+  ) :is(a,button,h1,h2,h3,strong,span) {
+    color: var(--cm-text);
+  }
+  html[data-theme='dark'] .app-shell :is(
+    .mobile-side,.mobile-sidebar,.mobile-drawer,.sidebar-drawer,
+    .nav-drawer,.drawer-panel,.drawer-content,.drawer-menu,
+    .mobile-menu-panel,.mobile-nav-panel,.mobile-side-panel,
+    .side-menu,.side-panel,.offcanvas,.offcanvas-panel
+  ) :is(.muted,small,.menu-heading,.nav-heading,.section-label) {
+    color: var(--cm-subtext) !important;
+  }
+  html[data-theme='dark'] .app-shell :is(
+    .mobile-side,.mobile-sidebar,.mobile-drawer,.sidebar-drawer,
+    .nav-drawer,.drawer-panel,.drawer-content,.drawer-menu,
+    .mobile-menu-panel,.mobile-nav-panel,.mobile-side-panel,
+    .side-menu,.side-panel,.offcanvas,.offcanvas-panel
+  ) :is(.campus,.campus-card,.campus-info) {
+    background: var(--cm-raised) !important;
+    border-color: var(--cm-stroke) !important;
+    color: var(--cm-text);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  html[data-theme='dark'] .app-shell :is(.item-detail,.listing-detail,.page-content) {
+    background-color: var(--cm-canvas) !important;
+  }
+}
+
+/* =======================================================================
+   CampusMart Phase 64.7 — Dark-mode route-level surfaces and drawer
+   This block intentionally runs after previous light/dark overrides.
+   It does NOT recolor listing photos, navy heroes, or primary pink buttons.
+   ======================================================================= */
+html[data-theme='dark'] {
+  --cm-67-bg: #101116;
+  --cm-67-card: #1d222d;
+  --cm-67-card-strong: #242a37;
+  --cm-67-border: rgba(224,233,250,.15);
+  --cm-67-text: #f5f7fc;
+  --cm-67-secondary: #c2cbda;
+  --cm-67-muted: #a9b5c8;
+}
+
+/* Pages with specially styled welcome/admin headers, empty states and tabs. */
+html[data-theme='dark'] .app-shell :is(
+  .admin-page, .moderator-page, .reports-page, .verification-page,
+  .verification-requests-page, .profile-page, .account-page,
+  .my-listings-page, .listings-page, .seller-studio, .seller-page
+) { color: var(--cm-67-text); }
+
+html[data-theme='dark'] .app-shell :is(
+  .admin-hero, .moderator-hero, .reports-hero, .verification-hero,
+  .page-hero, .page-intro, .admin-intro, .section-hero,
+  .admin-header, .moderator-header, .reports-header,
+  .verification-header, .workspace, .workspace-nav, .workspace-tabs,
+  .studio-tabs, .listings-tabs, .inventory-tabs, .tabs-bar,
+  .tab-bar, .tab-list, .profile-card, .profile-identity,
+  .identity-card, .identity-body, .campus-identity,
+  .student-identity, .student-id-card, .profile-details,
+  .empty-state, .empty-card, .empty-panel,
+  .admin-empty, .requests-empty, .reports-empty,
+  .verification-empty, .no-results, .no-requests, .no-reports
+) {
+  background-color: var(--cm-67-card) !important;
+  border-color: var(--cm-67-border) !important;
+  color: var(--cm-67-text) !important;
+}
+
+/* Large admin banners sometimes use background shorthand or gradients. */
+html[data-theme='dark'] .app-shell :is(
+  .admin-hero, .moderator-hero, .reports-hero, .verification-hero,
+  .admin-header, .moderator-header, .reports-header, .verification-header,
+  .page-intro, .admin-intro
+) {
+  background-image: linear-gradient(135deg,#222936,#1b202b) !important;
+}
+
+html[data-theme='dark'] .app-shell :is(
+  .admin-hero, .moderator-hero, .reports-hero, .verification-hero,
+  .page-hero, .page-intro, .admin-intro, .section-hero,
+  .admin-header, .moderator-header, .reports-header,
+  .verification-header, .profile-identity,
+  .identity-card, .identity-body, .student-identity,
+  .empty-state, .empty-card, .empty-panel,
+  .admin-empty, .requests-empty, .reports-empty,
+  .verification-empty, .no-results, .no-requests, .no-reports
+) :is(h1,h2,h3,h4,strong) { color: var(--cm-67-text) !important; }
+
+html[data-theme='dark'] .app-shell :is(
+  .admin-hero, .moderator-hero, .reports-hero, .verification-hero,
+  .page-hero, .page-intro, .admin-intro, .section-hero,
+  .admin-header, .moderator-header, .reports-header,
+  .verification-header, .profile-identity,
+  .identity-card, .identity-body, .student-identity,
+  .empty-state, .empty-card, .empty-panel,
+  .admin-empty, .requests-empty, .reports-empty,
+  .verification-empty, .no-results, .no-requests, .no-reports
+) :is(p,small,.muted,.subtitle,.description,.helper-text) {
+  color: var(--cm-67-secondary) !important;
+}
+
+/* In dark mode, non-selected tabs should remain visible on the new dark canvas. */
+html[data-theme='dark'] .app-shell :is(
+  .workspace-nav,.workspace-tabs,.studio-tabs,.listings-tabs,
+  .inventory-tabs,.tabs-bar,.tab-bar,.tab-list
+) :is(a,button,[role='tab']) {
+  background-color: var(--cm-67-card-strong);
+  border-color: var(--cm-67-border);
+  color: var(--cm-67-secondary);
+}
+html[data-theme='dark'] .app-shell :is(
+  .workspace-nav,.workspace-tabs,.studio-tabs,.listings-tabs,
+  .inventory-tabs,.tabs-bar,.tab-bar,.tab-list
+) :is(a,button,[role='tab']):is(.active,.selected,[aria-selected='true']) {
+  color: #fff;
+}
+
+/* Mobile menu: outer sheet, header/footer and gaps need matching dark material.
+   Do not recolor the dimmed overlay outside the drawer. */
+@media (max-width: 899px) {
+  html[data-theme='dark'] :is(
+    .mobile-side,.mobile-sidebar,.mobile-drawer,.sidebar-drawer,
+    .nav-drawer,.drawer-panel,.drawer-content,.drawer-menu,
+    .mobile-menu,.mobile-menu-panel,.mobile-nav-panel,.mobile-side-panel,
+    .side-menu,.side-panel,.offcanvas,.offcanvas-panel,
+    .mobile-nav-drawer,.menu-drawer,.menu-panel
+  ) {
+    background: #171b24 !important;
+    color: var(--cm-67-text) !important;
+    border-color: var(--cm-67-border) !important;
+  }
+  html[data-theme='dark'] :is(
+    .mobile-side,.mobile-sidebar,.mobile-drawer,.sidebar-drawer,
+    .nav-drawer,.drawer-panel,.drawer-content,.drawer-menu,
+    .mobile-menu,.mobile-menu-panel,.mobile-nav-panel,.mobile-side-panel,
+    .side-menu,.side-panel,.offcanvas,.offcanvas-panel,
+    .mobile-nav-drawer,.menu-drawer,.menu-panel
+  ) :is(header,footer,.drawer-header,.drawer-footer,.menu-header,.menu-footer,
+        .sidebar-header,.sidebar-footer,.mobile-menu-header,.mobile-menu-footer) {
+    background: #171b24 !important;
+    color: var(--cm-67-secondary) !important;
+    border-color: var(--cm-67-border) !important;
+  }
+  html[data-theme='dark'] :is(
+    .mobile-side,.mobile-sidebar,.mobile-drawer,.sidebar-drawer,
+    .nav-drawer,.drawer-panel,.drawer-content,.drawer-menu,
+    .mobile-menu,.mobile-menu-panel,.mobile-nav-panel,.mobile-side-panel,
+    .side-menu,.side-panel,.offcanvas,.offcanvas-panel,
+    .mobile-nav-drawer,.menu-drawer,.menu-panel
+  ) :is(.muted,.subtitle,small,.footer-copy,.sidebar-note) {
+    color: var(--cm-67-muted) !important;
+  }
+}

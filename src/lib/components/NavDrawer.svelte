@@ -122,4 +122,15 @@
 	form { margin: 0; }
 	.foot { margin-top: auto; padding: 18px 12px 0; border-top: 1px solid var(--line); }
 	.foot p { margin: 4px 0 10px; color: var(--body); font-size: 13px; }
+
+	/* Theme-aware mobile drawer: covers the full panel, not just the links. */
+	:global(html[data-theme='dark']) .panel { background: #171b25; color: #f4f6fb; border-right: 1px solid rgba(255,255,255,.14); }
+	:global(html[data-theme='dark']) .head { background: #171b25; }
+	:global(html[data-theme='dark']) .x { color: #f4f6fb; }
+	:global(html[data-theme='dark']) .x:hover, :global(html[data-theme='dark']) .item:hover { background: #2a3040; }
+	:global(html[data-theme='dark']) .campus { background: #212634; border-color: rgba(255,255,255,.16); }
+	:global(html[data-theme='dark']) .item { color: #f4f6fb; }
+	:global(html[data-theme='dark']) .item[aria-current='page'] { background: rgba(250,99,140,.18); color: #ff9fbc; }
+	:global(html[data-theme='dark']) .foot { background: #171b25; border-color: rgba(255,255,255,.15); }
+	:global(html[data-theme='dark']) .foot p { color: #c1cad9; }
 </style>

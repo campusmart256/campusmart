@@ -602,4 +602,16 @@ const saleItems = $derived(
 	}
 	@media (max-width:355px) { .hero-actions { grid-template-columns:1fr; } .dashboard-grid { gap:8px; } .dashboard-metric { padding:11px; } .dashboard-mini-strip { grid-template-columns:1fr; } }
 
+
+	/* Workspace tabs and dashboard cards must follow the current theme. */
+	:global(html[data-theme='dark']) .workspace-nav-wrap { background:#1e2430; border-color:rgba(255,255,255,.15); }
+	:global(html[data-theme='dark']) .workspace-nav-title { color:#b9c5d6; }
+	:global(html[data-theme='dark']) .workspace-nav-wrap .tab:not(.on) { background:#30394a; color:#eff3fa; }
+	:global(html[data-theme='dark']) .dashboard-heading h2, :global(html[data-theme='dark']) .dashboard-section-title h2 { color:#f5f7fb; }
+	:global(html[data-theme='dark']) .overview-subtitle { color:#bac5d5; }
+	:global(html[data-theme='dark']) .dashboard-metric, :global(html[data-theme='dark']) .dashboard-panel { background:#1e2430; color:#f5f7fb; border-color:rgba(255,255,255,.15); }
+	:global(html[data-theme='dark']) .dashboard-metric .metric-label, :global(html[data-theme='dark']) .dashboard-metric small { color:#bac5d5; }
+	:global(html[data-theme='dark']) .dashboard-mini-strip a { background:#252d3b; color:#eef2f8; border-color:rgba(255,255,255,.15); }
+	:global(html[data-theme='dark']) .dashboard-mini-strip strong { color:#f5f7fb; }
+	:global(html[data-theme='dark']) .review-form select, :global(html[data-theme='dark']) .review-form textarea { background:#252d3b; color:#f5f7fb; }
 </style>
