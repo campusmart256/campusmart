@@ -16,6 +16,28 @@
 
 	let menuOpen = $state(false);
 	let scrollY = $state(0);
+	// Scroll-linked progress: 0 = expanded/visible, 1 = hidden header and compact nav.
+	// Increasing page scroll Y is an upward finger swipe; decreasing Y reveals both bars.
+	let navigationProgress = $state(0);
+	let previousScrollY = 0;
+	const NAVIGATION_TRAVEL = 105;
+
+	function handleScroll() {
+		const current = Math.max(0, window.scrollY);
+		const delta = current - previousScrollY;
+		previousScrollY = current;
+
+		if (menuOpen || current <= 12) {
+			navigationProgress = 0;
+			return;
+		}
+		// Ignore microscopic wheel / touch jitter, but otherwise track motion continuously.
+		if (Math.abs(delta) < 0.35) return;
+		// Hide smoothly as the user swipes up; reveal as they swipe down.
+		// Individual deltas are capped to avoid a large single jump on wheel / page navigation.
+		const change = Math.max(-55, Math.min(55, delta)) / NAVIGATION_TRAVEL;
+		navigationProgress = Math.max(0, Math.min(1, navigationProgress + change));
+	}
 	/** @type {HTMLButtonElement | undefined} */
 	let menuBtn = $state();
 
@@ -24,7 +46,11 @@
 		await tick();
 		menuBtn?.focus();
 	}
-	afterNavigate(() => { menuOpen = false; });
+	afterNavigate(() => {
+		menuOpen = false;
+		navigationProgress = 0;
+		if (typeof window !== 'undefined') previousScrollY = window.scrollY;
+	});
 </script>
 
 <svelte:head>
@@ -32,16 +58,16 @@
 	<title>campusmart</title>
 </svelte:head>
 
-<svelte:window bind:scrollY />
+<svelte:window bind:scrollY onscroll={handleScroll} />
 
 <DesktopSidebar user={data.user} profile={data.profile} isStaff={data.isStaff} pathname={page.url.pathname} unreadMessages={data.unreadMessages ?? 0} pendingVerificationRequests={data.pendingVerificationRequests ?? 0} />
 
 <div class="app-shell">
-<header class="top" class:scrolled={scrollY > 10}>
+<header class="top" class:scrolled={scrollY > 10} style={`--header-hide: ${menuOpen ? 0 : navigationProgress}`}>
 	<button class="menu" type="button" aria-label="Open menu" aria-haspopup="dialog" aria-expanded={menuOpen} aria-controls="site-menu" bind:this={menuBtn} onclick={() => (menuOpen = true)}>
 		<Icon name="menu" />
 	</button>
-	<Logo height={26} />
+	<span class="brand-mark"><Logo height={26} /></span>
 	<span class="grow"></span>
 	<a class="sell" href="/sell"><Icon name="plus" size={18} /><span class="long">Sell an item</span><span class="short">Sell</span></a>
 	{#if data.user}
@@ -58,11 +84,12 @@
 <main>{@render children()}</main>
 </div>
 
-<BottomNav pathname={page.url.pathname} signedIn={!!data.user} unreadMessages={data.unreadMessages ?? 0} />
+<BottomNav pathname={page.url.pathname} signedIn={!!data.user} unreadMessages={data.unreadMessages ?? 0} progress={menuOpen ? 0 : navigationProgress} />
 
 <style>
 	.app-shell { min-height: 100dvh; }
-	.top { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 8px; padding: 8px 12px; min-height: 60px; background: rgba(255, 255, 255, 0.74); border-bottom: 1px solid rgba(255,255,255,0.58); -webkit-backdrop-filter: blur(22px) saturate(165%); backdrop-filter: blur(22px) saturate(165%); box-shadow: 0 1px 0 rgba(15,23,42,0.035); isolation: isolate; transition: background-color .25s ease, box-shadow .25s ease, border-color .25s ease; }
+	.top { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 8px; padding: 8px 12px; min-height: 60px; background: rgba(255, 255, 255, 0.74); border-bottom: 1px solid rgba(255,255,255,0.58); -webkit-backdrop-filter: blur(22px) saturate(165%); backdrop-filter: blur(22px) saturate(165%); box-shadow: 0 1px 0 rgba(15,23,42,0.035); isolation: isolate; transform: translate3d(0, calc(-102% * var(--header-hide, 0)), 0); will-change: transform; transition: transform .105s ease-out, background-color .3s ease, box-shadow .3s ease, border-color .3s ease; }
+	.top[style*="--header-hide: 1"] { pointer-events: none; }
 	/* A translucent sticky header: page content softly blurs behind it as you scroll. */
 	.top.scrolled { background: rgba(255, 255, 255, 0.68); border-bottom-color: rgba(255,255,255,0.48); box-shadow: 0 9px 28px rgba(16, 25, 46, 0.09), 0 1px 0 rgba(16, 25, 46, 0.035); }
 	/* Clear contrast and a predictable fallback where backdrop blur is unsupported. */
