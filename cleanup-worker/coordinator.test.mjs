@@ -132,7 +132,7 @@ console.log('PASS: Disabled cleanup does not claim jobs');
 
 // Test 2: Successful cleanup.
 assert.equal(
-  await runTest('claim,validate,delete,validate,verify,complete'),
+  await runTest('none'),
   'claim,validate,delete,validate,verify,complete'
 );
 
@@ -183,5 +183,41 @@ assert.equal(
 );
 
 console.log('PASS: Invalid claim blocks database completion');
+
+
+// Test 7: Completion failure followed by a successful retry.
+// R2 deletion is represented by an idempotent mock: repeating the delete
+// does not remove a second object or cause a failure.
+const deletedObjects = new Set();
+let deletionCalls = 0;
+context.deleteVerificationDocument = async (_env, job) => {
+  events.push('delete');
+  deletionCalls++;
+  deletedObjects.add(job.document_path);
+};
+
+assert.equal(
+  await runTest('complete'),
+  'claim,validate,delete,validate,verify,complete,report_failure'
+);
+assert.equal(deletionCalls, 1);
+assert.equal(deletedObjects.size, 1);
+
+assert.equal(
+  await runTest('none'),
+  'claim,validate,delete,validate,verify,complete'
+);
+assert.equal(deletionCalls, 2);
+assert.equal(deletedObjects.size, 1);
+console.log('PASS: Retry after completion failure uses idempotent deletion');
+
+// Test 8: The independent live-cleanup switch blocks all processing.
+events.length = 0;
+await context.testCoordinator({
+  ...env,
+  ENABLE_LIVE_CLEANUP: 'false'
+});
+assert.deepEqual(events, []);
+console.log('PASS: Live-cleanup switch blocks job claims');
 
 console.log('PASS: No real database or R2 operations performed');
