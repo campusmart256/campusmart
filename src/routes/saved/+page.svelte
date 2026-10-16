@@ -17,13 +17,19 @@
  *   seller: string,
  *   cover: string | null,
  *   verified: boolean,
- *   saved: boolean
+ *   saved: boolean,
+ *   priceWhenSavedUgx?: number | null,
+ *   priceDropUgx?: number,
+ *   hasPriceDropAlert?: boolean,
+ *   priceAlertDismissedUgx?: number | null
  * }} SavedItem
  */
 
 const savedListings = $derived(
     /** @type {SavedItem[]} */ (data.listings)
 );
+
+  const activePriceDrops = $derived(savedListings.filter((item) => item.hasPriceDropAlert && (item.priceDropUgx ?? 0) > 0).length);
 
   let search = $state('');
   let category = $state('all');
@@ -85,6 +91,9 @@ const savedListings = $derived(
 
   {#if data.listings.length}
     <div class="saved-count">{data.listings.length} available saved {data.listings.length === 1 ? 'item' : 'items'}</div>
+    {#if activePriceDrops > 0}
+      <p class="price-alert-summary" role="status"><Icon name="trending-down" size={18} /> {activePriceDrops} saved {activePriceDrops === 1 ? 'item has' : 'items have'} dropped in price since you saved {activePriceDrops === 1 ? 'it' : 'them'}.</p>
+    {/if}
     <div class="saved-filters" role="search" aria-label="Filter saved items">
       <label class="field"><span>Search saved items</span><input type="search" bind:value={search} placeholder="Item, seller, or category" autocomplete="off" /></label>
       <label class="field"><span>Category</span><select bind:value={category}><option value="all">All categories</option>{#each categories as c (c)}<option value={c}>{c}</option>{/each}</select></label>
@@ -125,6 +134,18 @@ const savedListings = $derived(
         {#each visibleListings as l (l.id)}
           <div class="saved-entry">
             <ListingCard l={l} signedIn={true} returnTo="/saved" />
+            {#if l.hasPriceDropAlert && (l.priceDropUgx ?? 0) > 0 && typeof l.priceWhenSavedUgx === 'number'}
+              <div class="saved-price-drop" role="status">
+                <span class="price-drop-label"><Icon name="trending-down" size={16} /> Price dropped by UGX {formatNumber(l.priceDropUgx ?? 0)}</span>
+                <span class="price-drop-context">When saved: UGX {formatNumber(l.priceWhenSavedUgx)} · Now: UGX {formatNumber(l.price)}</span>
+                <form method="POST" action="?/dismissPriceAlert" class="dismiss-alert-form">
+                  <input type="hidden" name="listing_id" value={l.id} />
+                  <button type="submit" class="dismiss-alert-button" aria-label={`Dismiss price drop alert for ${l.title}`}>
+                    <Icon name="check" size={15} /> Dismiss alert
+                  </button>
+                </form>
+              </div>
+            {/if}
             <button type="button" class="compare-toggle" class:chosen={selectedIds.includes(l.id)} aria-pressed={selectedIds.includes(l.id)} onclick={() => toggleCompare(l.id)}>
               {selectedIds.includes(l.id) ? '✓ Selected for comparison' : '+ Add to comparison'}
             </button>
@@ -164,6 +185,16 @@ const savedListings = $derived(
   .result-count { font-size: 13px; margin: 0 0 14px; }
   .saved-grid { margin-bottom: 16px; }
   .saved-entry { min-width: 0; display: flex; flex-direction: column; gap: 7px; }
+  .price-alert-summary { display: flex; align-items: center; gap: 8px; padding: 11px 14px; margin: 0 0 14px; border-radius: 13px; background: rgba(219, 249, 231, .7); border: 1px solid rgba(71, 155, 107, .25); color: #17663a; font-size: 13px; font-weight: 750; }
+  .saved-price-drop { display: grid; gap: 4px; padding: 11px 13px; border-radius: 13px; border: 1px solid rgba(71, 155, 107, .24); background: rgba(227, 249, 235, .76); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+  .price-drop-label { display: flex; align-items: center; gap: 7px; color: #146c42; font-size: 13px; font-weight: 800; }
+  .price-drop-context { font-size: 12px; color: #425c4b; }
+  .dismiss-alert-form { display: flex; justify-content: flex-end; margin-top: 5px; }
+  .dismiss-alert-button { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 8px 13px; border: 1px solid rgba(41, 122, 75, .35); border-radius: 12px; background: rgba(255,255,255,.66); color: #175d39; font: inherit; font-size: 12px; font-weight: 750; cursor: pointer; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: background .18s ease, transform .18s ease; }
+  .dismiss-alert-button:hover { background: rgba(255,255,255,.92); transform: translateY(-1px); }
+  .dismiss-alert-button:focus-visible { outline: 3px solid #f2a3b0; outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .dismiss-alert-button { transition: none; } .dismiss-alert-button:hover { transform: none; } }
+  @media (prefers-reduced-transparency: reduce) { .saved-price-drop { background: #e7f7ed; backdrop-filter: none; -webkit-backdrop-filter: none; } }
   .compare-toggle { border: 1px solid var(--line); background: white; color: inherit; border-radius: 9px; padding: 9px 12px; font-weight: 700; cursor: pointer; }
   .compare-toggle.chosen { background: #e6f7ef; border-color: #8acfac; color: #146c42; }
   .compare-toggle:focus-visible, .no-matches button:focus-visible { outline: 3px solid #f2a3b0; outline-offset: 2px; }

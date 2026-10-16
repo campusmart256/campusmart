@@ -1,12 +1,12 @@
 <script>
 	import Icon from './Icon.svelte';
-	/** @type {{ pathname: string, signedIn: boolean, unreadMessages?: number, progress?: number }} */
-	let { pathname, signedIn, unreadMessages = 0, progress = 0 } = $props();
+	/** @type {{ pathname: string, signedIn: boolean, unreadMessages?: number, savedPriceDropAlerts?: number, progress?: number }} */
+	let { pathname, signedIn, unreadMessages = 0, savedPriceDropAlerts = 0, progress = 0 } = $props();
 	const items = $derived([
 		{ label: 'Browse', href: '/', icon: 'home' },
-		{ label: 'Saved', href: '/saved', icon: 'heart' },
+		{ label: 'Saved', href: '/saved', icon: 'heart', count: savedPriceDropAlerts, countLabel: 'active price-drop alerts' },
 		{ label: 'Sell', href: '/sell', icon: 'plus', sell: true },
-		{ label: 'Messages', href: '/messages', icon: 'chat', count: unreadMessages },
+		{ label: 'Messages', href: '/messages', icon: 'chat', count: unreadMessages, countLabel: 'unread messages' },
 		{ label: 'Profile', href: signedIn ? '/account' : '/signin', icon: 'user' }
 	]);
 	const shrink = $derived(Math.max(0, Math.min(1, progress)));
@@ -18,7 +18,7 @@
 			<a class="sellfab" href={item.href} aria-label="Sell an item" aria-current={pathname === item.href ? 'page' : undefined}><Icon name="plus" size={26} /></a>
 		{:else}
 			<a href={item.href} aria-current={pathname === item.href || (item.label === 'Profile' && pathname === '/account') ? 'page' : undefined}>
-				<span class="iconwrap"><Icon name={item.icon} size={22} />{#if (item.count ?? 0) > 0}<span class="badge" aria-label={`${item.count} unread messages`}>{(item.count ?? 0) > 99 ? '99+' : item.count}</span>{/if}</span><span>{item.label}</span>
+				<span class="iconwrap"><Icon name={item.icon} size={22} />{#if (item.count ?? 0) > 0}<span class="badge" aria-label={`${item.count} ${item.countLabel ?? 'notifications'}`}>{(item.count ?? 0) > 99 ? '99+' : item.count}</span>{/if}</span><span>{item.label}</span>
 			</a>
 		{/if}
 	{/each}

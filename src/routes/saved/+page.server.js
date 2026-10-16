@@ -10,7 +10,7 @@ export const load = async ({ locals, url }) => {
 
   const { data: saves, error: saveError } = await locals.supabase
     .from('saved_listings')
-    .select('listing_id, created_at')
+    .select('listing_id, created_at, price_when_saved_ugx, price_alert_dismissed_at, price_alert_dismissed_ugx')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(200);
@@ -35,8 +35,15 @@ export const load = async ({ locals, url }) => {
   }
 
   const order = new Map(ids.map((id, index) => [id, index]));
+  const savedById = new Map((saves ?? []).map((save) => [save.listing_id, save]));
   const listings = (rows ?? []).map((l) => {
     const first = [...(l.listing_images ?? [])].sort((a, b) => a.position - b.position)[0];
+    const savedEntry = savedById.get(l.id);
+    const priceWhenSavedUgx = savedEntry?.price_when_saved_ugx ?? l.price_ugx;
+    const priceDropUgx = Math.max(0, priceWhenSavedUgx - l.price_ugx);
+    const dismissedPriceUgx = savedEntry?.price_alert_dismissed_ugx ?? null;
+    const hasPriceDropAlert = priceDropUgx > 0 &&
+      (dismissedPriceUgx === null || l.price_ugx < dismissedPriceUgx);
 
     const category = Array.isArray(l.categories)
         ? l.categories[0]
@@ -50,6 +57,11 @@ export const load = async ({ locals, url }) => {
       id: l.id,
       title: l.title,
       price: l.price_ugx,
+      priceWhenSavedUgx,
+      priceDropUgx,
+      hasPriceDropAlert,
+      priceAlertDismissedAt: savedEntry?.price_alert_dismissed_at ?? null,
+      priceAlertDismissedUgx: dismissedPriceUgx,
       condition: l.condition,
       negotiable: l.is_negotiable,
       category: category?.name ?? '',
@@ -100,5 +112,33 @@ export const actions = {
     }
 
     redirect(303, returnTo);
+  },
+
+  dismissPriceAlert: async ({ request, locals }) => {
+    const user = await locals.getUser();
+    if (!user) redirect(303, '/signin?next=/saved');
+
+    const form = await request.formData();
+    const listingId = String(form.get('listing_id') ?? '');
+    if (!isUuid(listingId)) {
+      return fail(400, { message: 'Invalid saved item.' });
+    }
+
+    // The RPC checks ownership and reads the current price from the database.
+    // Never accept a price or user ID from the submitted form.
+    const { data: dismissed, error: dismissError } = await locals.supabase.rpc(
+      'dismiss_saved_price_alert',
+      { p_listing_id: listingId }
+    );
+
+    if (dismissError) {
+      console.error('saved price alert dismissal failed:', dismissError.code, dismissError.message);
+      return fail(500, { message: 'Could not dismiss this price alert. Please try again.' });
+    }
+    if (dismissed !== true) {
+      return fail(409, { message: 'This price alert is no longer active or available.' });
+    }
+
+    redirect(303, '/saved');
   }
 };

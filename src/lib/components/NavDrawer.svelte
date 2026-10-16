@@ -3,14 +3,14 @@
 	import Logo from './Logo.svelte';
 	import Icon from './Icon.svelte';
 
-	/** @type {{ user: any, isStaff: boolean, pathname: string, unreadMessages?: number, pendingVerificationRequests?: number, pendingReports?: number, onclose: () => void }} */
-	let { user, isStaff, pathname, unreadMessages = 0, pendingVerificationRequests = 0, pendingReports = 0, onclose } = $props();
+	/** @type {{ user: any, isStaff: boolean, pathname: string, unreadMessages?: number, savedPriceDropAlerts?: number, pendingVerificationRequests?: number, pendingReports?: number, onclose: () => void }} */
+	let { user, isStaff, pathname, unreadMessages = 0, savedPriceDropAlerts = 0, pendingVerificationRequests = 0, pendingReports = 0, onclose } = $props();
 
 	const marketplace = $derived([
 		{ label: 'Browse marketplace', href: '/', icon: 'home' },
-		{ label: 'Saved items', href: '/saved', icon: 'heart' },
+		{ label: 'Saved items', href: '/saved', icon: 'heart', count: savedPriceDropAlerts, countLabel: 'active price-drop alerts' },
 		{ label: 'Recently viewed', href: '/recently-viewed', icon: 'search' },
-		{ label: 'Messages', href: '/messages', icon: 'chat', count: unreadMessages },
+		{ label: 'Messages', href: '/messages', icon: 'chat', count: unreadMessages, countLabel: 'unread messages' },
 		{ label: 'My listings', href: '/my-listings', icon: 'tag' }
 	]);
 
@@ -63,7 +63,7 @@
 <span class="label">{item.label}</span>
 
 {#if (item.count ?? 0) > 0}
-    <span class="badge" aria-label={`${item.count} unread messages`}>
+    <span class="badge" aria-label={`${item.count} ${item.countLabel ?? 'notifications'}`}>
         {(item.count ?? 0) > 99 ? '99+' : item.count}
     </span>
 {/if}

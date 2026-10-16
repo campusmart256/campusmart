@@ -3,12 +3,12 @@
 	import Icon from './Icon.svelte';
 	import Avatar from './Avatar.svelte';
 
-	/** @type {{ user: any, profile?: any, isStaff: boolean, pathname: string, unreadMessages?: number, pendingVerificationRequests?: number, pendingReports?: number, compact?: boolean }} */
-	let { user, profile, isStaff, pathname, unreadMessages = 0, pendingVerificationRequests = 0, pendingReports = 0, compact = false } = $props();
+	/** @type {{ user: any, profile?: any, isStaff: boolean, pathname: string, unreadMessages?: number, pendingVerificationRequests?: number, pendingReports?: number, savedPriceDropAlerts?: number, compact?: boolean }} */
+	let { user, profile, isStaff, pathname, unreadMessages = 0, pendingVerificationRequests = 0, pendingReports = 0, savedPriceDropAlerts = 0, compact = false } = $props();
 
 	const marketplace = $derived([
 		{ label: 'Browse marketplace', href: '/', icon: 'home' },
-		{ label: 'Saved items', href: '/saved', icon: 'heart' },
+		{ label: 'Saved items', href: '/saved', icon: 'heart', count: savedPriceDropAlerts },
 		{ label: 'Recently viewed', href: '/recently-viewed', icon: 'search' },
 		{ label: 'Safety center', href: '/safety', icon: 'shield' },
 		{ label: 'Messages', href: '/messages', icon: 'chat', count: unreadMessages },
@@ -40,7 +40,7 @@ function active(href) {
 				<Icon name={item.icon} size={20} />
 				<span class="label">{item.label}</span>
 	{#if (item.count ?? 0) > 0}
-    <span class="badge" aria-label={`${item.count} unread messages`}>
+    <span class="badge" aria-label={item.href === '/saved' ? `${item.count} saved item price-drop alerts` : `${item.count} unread messages`}>
         {(item.count ?? 0) > 99 ? '99+' : item.count}
     </span>
 {/if}

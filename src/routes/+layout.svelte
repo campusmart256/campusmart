@@ -60,7 +60,7 @@
 
 <svelte:window bind:scrollY onscroll={handleScroll} />
 
-<DesktopSidebar user={data.user} profile={data.profile} isStaff={data.isStaff} pathname={page.url.pathname} unreadMessages={data.unreadMessages ?? 0} pendingVerificationRequests={data.pendingVerificationRequests ?? 0} />
+<DesktopSidebar user={data.user} profile={data.profile} isStaff={data.isStaff} pathname={page.url.pathname} unreadMessages={data.unreadMessages ?? 0} pendingVerificationRequests={data.pendingVerificationRequests ?? 0} savedPriceDropAlerts={data.savedPriceDropAlerts ?? 0} />
 
 <div class="app-shell">
 <header class="top" class:scrolled={scrollY > 10} style={`--header-hide: ${menuOpen ? 0 : navigationProgress}`}>
@@ -78,13 +78,13 @@
 </header>
 
 {#if menuOpen}
-	<NavDrawer user={data.user} isStaff={data.isStaff} pathname={page.url.pathname} unreadMessages={data.unreadMessages ?? 0} pendingVerificationRequests={data.pendingVerificationRequests ?? 0} onclose={closeMenu} />
+	<NavDrawer user={data.user} isStaff={data.isStaff} pathname={page.url.pathname} unreadMessages={data.unreadMessages ?? 0} pendingVerificationRequests={data.pendingVerificationRequests ?? 0} savedPriceDropAlerts={data.savedPriceDropAlerts ?? 0} onclose={closeMenu} />
 {/if}
 
 <main>{@render children()}</main>
 </div>
 
-<BottomNav pathname={page.url.pathname} signedIn={!!data.user} unreadMessages={data.unreadMessages ?? 0} progress={menuOpen ? 0 : navigationProgress} />
+<BottomNav pathname={page.url.pathname} signedIn={!!data.user} unreadMessages={data.unreadMessages ?? 0} savedPriceDropAlerts={data.savedPriceDropAlerts ?? 0} progress={menuOpen ? 0 : navigationProgress} />
 
 <style>
 	.app-shell { min-height: 100dvh; }
