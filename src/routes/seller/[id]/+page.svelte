@@ -7,17 +7,66 @@
     import { formatDate } from '#lib/format.js';
     /** @type {{data: any}} */
     let { data } = $props();
+    /**
+ * @typedef {{
+ *   id: string,
+ *   title: string,
+ *   category: string,
+ *   price: number,
+ *   condition: string,
+ *   negotiable: boolean,
+ *   seller: string,
+ *   cover: string | null,
+ *   verified: boolean,
+ *   own: boolean,
+ *   saved?: boolean
+ * }} SellerListing
+ */
+
+/**
+ * @typedef {{
+ *   rating: number | string,
+ *   reviewer_name?: string,
+ *   created_at: string,
+ *   item_title: string,
+ *   comment?: string | null
+ * }} SellerReview
+ */
+
+const sellerListings = $derived(
+    /** @type {SellerListing[]} */ (data.listings)
+);
+
+const sellerReviews = $derived(
+    /** @type {SellerReview[]} */ (data.reviews)
+);
     const name = $derived(data.profile.display_name || 'CampusMart seller');
     let itemSearch = $state('');
     let categoryFilter = $state('all');
     let reviewRating = $state('all');
-    const categories = $derived([...new Set(data.listings.map((item) => item.category).filter(Boolean))].sort((a, b) => a.localeCompare(b)));
-    const visibleListings = $derived(data.listings.filter((item) => {
-        const matchesName = item.title.toLocaleLowerCase().includes(itemSearch.trim().toLocaleLowerCase());
-        const matchesCategory = categoryFilter === 'all' || item.category === categoryFilter;
+   const categories = $derived(
+    [...new Set(sellerListings.map((item) => item.category).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b))
+);
+
+        const visibleListings = $derived(
+            sellerListings.filter((item) => {
+        const matchesName = item.title.toLocaleLowerCase()
+            .includes(itemSearch.trim().toLocaleLowerCase());
+
+        const matchesCategory =
+            categoryFilter === 'all' || item.category === categoryFilter;
+
         return matchesName && matchesCategory;
-    }));
-    const visibleReviews = $derived(data.reviews.filter((review) => reviewRating === 'all' || Number(review.rating) === Number(reviewRating)));
+    })
+);
+
+    const visibleReviews = $derived(
+    sellerReviews.filter((review) =>
+        reviewRating === 'all' ||
+        Number(review.rating) === Number(reviewRating)
+    )
+);
     const resetItemFilters = () => { itemSearch = ''; categoryFilter = 'all'; };
 
 </script>

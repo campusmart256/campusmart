@@ -1,6 +1,7 @@
 import { error, redirect } from '@sveltejs/kit';
 import { getVerificationDocument } from '#lib/server/verification-documents.js';
 
+/** @param {import('./$types').RequestEvent['locals']} locals */
 async function requireStaff(locals) {
 	const user = await locals.getUser();
 	if (!user) redirect(303, '/signin?next=/admin/verification');

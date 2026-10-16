@@ -5,14 +5,16 @@
 	let { data } = $props();
 	let search = $state('');
 	let unreadOnly = $state(false);
+	const conversations = $derived(data.conversations ?? []);
 	const unreadTotal = $derived(Object.values(data.unreadByConversation ?? {}).reduce((sum, count) => sum + Number(count || 0), 0));
-	const filteredConversations = $derived((data.conversations ?? []).filter((c) => {
-		if (unreadOnly && !(data.unreadByConversation?.[c.id] > 0)) return false;
+	const filteredConversations = $derived((conversations ?? []).filter((c) => {
+		if (unreadOnly && (data.unreadByConversation?.[c.id] ?? 0) === 0) return false;
 		const person = otherPerson(c);
-		const text = [person?.display_name, c.listings?.title, data.latestByConversation?.[c.id]?.body].join(' ').toLowerCase();
+		const text = [person?.display_name, listingInfo(c)?.title, data.latestByConversation?.[c.id]?.body].join(' ').toLowerCase();
 		return text.includes(search.trim().toLowerCase());
 	}));
 
+	/** @param {{ body: string | null, sender_id: string, created_at: string } | undefined} message */
 	function previewText(message) {
 		if (!message?.body) return 'No messages yet';
 		const prefix = message.sender_id === data.userId ? 'You: ' : '';
@@ -20,20 +22,28 @@
 		const preview = text.length > 90 ? `${text.slice(0, 90)}…` : text;
 		return `${prefix}${preview}`;
 	}
-
+/** @param {any} conversation */
+function listingInfo(conversation) {
+    const listing = conversation.listings;
+    return Array.isArray(listing) ? listing[0] : listing;
+}
+	/** @param {{ created_at: string } | undefined} message */
 	function previewTime(message) {
 		if (!message?.created_at) return '';
 		return new Date(message.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 	}
 
+	/** @param {any} conversation */
 	function otherPerson(conversation) {
 		return conversation.buyer_id === data.userId ? conversation.seller : conversation.buyer;
 	}
 
+	/** @param {any} conversation */
 	function otherRole(conversation) {
 		return conversation.buyer_id === data.userId ? 'seller' : 'buyer';
 	}
 
+	/** @param {any} conversation */
 	function listingCover(conversation) {
 		const images = conversation.listings?.listing_images ?? [];
 		const first = [...images].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))[0];
@@ -49,9 +59,9 @@
 			<h1>Your messages<span class="hero-period">.</span></h1>
 			<p>Keep every campus deal in one place. Find a conversation and pick up where you left off.</p>
 		</div>
-		<div class="hero-summary" aria-label={`${data.conversations.length} conversations, ${unreadTotal} unread messages`}>
+		<div class="hero-summary" aria-label={`${conversations.length} conversations, ${unreadTotal} unread messages`}>
 			<span class="hero-summary-icon" aria-hidden="true">✉</span>
-			<strong>{data.conversations.length}</strong>
+			<strong>{conversations.length}</strong>
 			<span>Conversations</span>
 			{#if unreadTotal > 0}<small>{unreadTotal} unread</small>{:else}<small>All caught up</small>{/if}
 		</div>
@@ -64,7 +74,7 @@
 		</div>
 		{#if data.loadFailed}
 			<div class="notice warn" role="alert">Could not load conversations. Please try again.</div>
-		{:else if !data.conversations.length}
+		{:else if !conversations.length}
 			<div class="inbox-empty">
 				<div class="empty-symbol" aria-hidden="true">✉</div>
 				<h3>No conversations yet</h3>
@@ -82,7 +92,7 @@
 					<span class="filter-dot" aria-hidden="true"></span> Unread only
 				</button>
 			</div>
-			<div class="inbox-result-count" aria-live="polite">Showing {filteredConversations.length} of {data.conversations.length} conversations</div>
+			<div class="inbox-result-count" aria-live="polite">Showing {filteredConversations.length} of {conversations.length} conversations</div>
 			{#if !filteredConversations.length}
 				<div class="filter-empty"><strong>No matching conversations</strong><p>Try another search or turn off the unread filter.</p><button type="button" onclick={() => { search = ''; unreadOnly = false; }}>Clear filters</button></div>
 			{:else}
@@ -102,9 +112,11 @@
 								<strong class="person-name"><span>{person?.display_name ?? (c.buyer_id === data.userId ? 'Seller' : 'Buyer')}</span>
 									{#if person?.verification_status === 'verified'}<span class="verified-dot" title="Verified student" aria-label="Verified student"><Icon name="verified" size={13} /></span>{/if}
 								</strong>
-								{#if previewTime(latest)}<time datetime={latest.created_at}>{previewTime(latest)}</time>{/if}
+								{#if latest?.created_at}
+    <time datetime={latest.created_at}>{previewTime(latest)}</time>
+{/if}
 							</div>
-							<div class="item-title">{c.listings?.title ?? 'Item'}</div>
+							<div class="item-title">{listingInfo(c)?.title ?? 'Item'}</div>
 							<div class="message-preview">{previewText(latest)}</div>
 						</div>
 						{#if unread > 0}<span class="unread-badge" aria-label={`${unread} unread messages`}>{unread > 99 ? '99+' : unread}</span>{:else}<span class="row-chevron" aria-hidden="true">›</span>{/if}

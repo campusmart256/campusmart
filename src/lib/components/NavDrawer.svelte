@@ -59,7 +59,14 @@
 		<div class="group">Marketplace</div>
 		{#each marketplace as item (item.href)}
 			<a class="item" href={item.href} aria-current={pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href + '/')) ? 'page' : undefined}>
-				<Icon name={item.icon} size={20} /><span class="label">{item.label}</span>{#if item.count > 0}<span class="badge" aria-label={`${item.count} unread messages`}>{item.count > 99 ? '99+' : item.count}</span>{:else if item.soon}<span class="soon">Soon</span>{/if}
+<Icon name={item.icon} size={20} />
+<span class="label">{item.label}</span>
+
+{#if (item.count ?? 0) > 0}
+    <span class="badge" aria-label={`${item.count} unread messages`}>
+        {(item.count ?? 0) > 99 ? '99+' : item.count}
+    </span>
+{/if}
 			</a>
 		{/each}
 	</nav>
@@ -109,7 +116,7 @@
 	.item:hover { background: #f8f2f0; text-decoration: none; }
 	.item[aria-current='page'] { background: #fdecef; color: var(--red); }
 	.item .label { flex: 1; }
-	.soon { font-size: 11px; font-weight: 700; color: var(--mute); border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; background: #fff; }
+
 	.badge { min-width: 22px; height: 22px; padding: 0 7px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; background: var(--red); color: #fff; font-size: 12px; font-weight: 800; }
 	.btnrow { background: none; border: 0; cursor: pointer; }
 	form { margin: 0; }

@@ -37,16 +37,25 @@ export const load = async ({ locals, url }) => {
   const order = new Map(ids.map((id, index) => [id, index]));
   const listings = (rows ?? []).map((l) => {
     const first = [...(l.listing_images ?? [])].sort((a, b) => a.position - b.position)[0];
+
+    const category = Array.isArray(l.categories)
+        ? l.categories[0]
+        : l.categories;
+
+    const sellerProfile = Array.isArray(l.profiles)
+        ? l.profiles[0]
+        : l.profiles;
+
     return {
       id: l.id,
       title: l.title,
       price: l.price_ugx,
       condition: l.condition,
       negotiable: l.is_negotiable,
-      category: l.categories?.name ?? '',
-      seller: l.profiles?.display_name ?? '',
+      category: category?.name ?? '',
+      seller: sellerProfile?.display_name ?? '',
       cover: first?.storage_path ?? null,
-      verified: l.profiles?.verification_status === 'verified',
+      verified: sellerProfile?.verification_status === 'verified',
       saved: true
     };
   }).sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));

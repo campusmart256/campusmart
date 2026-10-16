@@ -15,8 +15,17 @@ export const load = async ({ locals }) => {
 
 	const conversations = data ?? [];
 	const conversationIds = conversations.map((conversation) => conversation.id);
-	const unreadByConversation = {};
-	const latestByConversation = {};
+	/** @type {Record<string, number>} */
+const unreadByConversation = {};
+
+/** @type {Record<string, {
+    conversation_id: string,
+    sender_id: string,
+    body: string | null,
+    created_at: string,
+    unsent_at?: string | null
+}>} */
+const latestByConversation = {};
 
 	if (conversationIds.length) {
 		const unreadResult = await locals.supabase
@@ -34,34 +43,44 @@ export const load = async ({ locals }) => {
 			}
 		}
 
-		let latestResult = await locals.supabase
-			.from('messages')
-			.select('conversation_id, sender_id, body, created_at, unsent_at')
-			.in('conversation_id', conversationIds)
-			.order('created_at', { ascending: false })
-			.limit(300);
+		const latestResult = await locals.supabase
+    .from('messages')
+    .select('conversation_id, sender_id, body, created_at, unsent_at')
+    .in('conversation_id', conversationIds)
+    .order('created_at', { ascending: false })
+    .limit(300);
 
-		if (latestResult.error) {
-			// The unsent_at column exists after the v0.1.7 migration. Fall back gracefully before the migration is run.
-			latestResult = await locals.supabase
-				.from('messages')
-				.select('conversation_id, sender_id, body, created_at')
-				.in('conversation_id', conversationIds)
-				.order('created_at', { ascending: false })
-				.limit(300);
-		}
+if (latestResult.error) {
+    // Fallback for databases without the unsent_at column.
+    const fallbackResult = await locals.supabase
+        .from('messages')
+        .select('conversation_id, sender_id, body, created_at')
+        .in('conversation_id', conversationIds)
+        .order('created_at', { ascending: false })
+        .limit(300);
 
-		if (latestResult.error) {
-			console.error('latest message preview load failed:', latestResult.error.code, latestResult.error.message);
-		} else {
-			for (const message of latestResult.data ?? []) {
-				if (message.unsent_at) continue;
-				if (!latestByConversation[message.conversation_id]) {
-					latestByConversation[message.conversation_id] = message;
-				}
-			}
-		}
-	}
+    if (fallbackResult.error) {
+        console.error(
+            'latest message preview load failed:',
+            fallbackResult.error.code,
+            fallbackResult.error.message
+        );
+    } else {
+        for (const message of fallbackResult.data ?? []) {
+            if (!latestByConversation[message.conversation_id]) {
+                latestByConversation[message.conversation_id] = message;
+            }
+        }
+    }
+} else {
+    for (const message of latestResult.data ?? []) {
+        if (message.unsent_at) continue;
 
+        if (!latestByConversation[message.conversation_id]) {
+            latestByConversation[message.conversation_id] = message;
+        }
+    }
+}
 	return { conversations, unreadByConversation, latestByConversation, userId: user.id, loadFailed: !!error };
+};
 };

@@ -1,5 +1,5 @@
 <script>
-	/** @type {{ status?: string | null, compact?: boolean, label?: string }} */
+/** @type {{ status?: string | boolean | null, compact?: boolean, label?: string }} */
 	let { status = null, compact = false, label = 'Verified student' } = $props();
 	const verified = $derived(status === 'verified' || status === true);
 </script>

@@ -25,12 +25,23 @@ export function readRecentlyViewed() {
   try {
     const raw = JSON.parse(window.localStorage.getItem(KEY) || '[]');
     if (!Array.isArray(raw)) return [];
-    const ids = new Set();
-    return raw.map(normalize).filter((item) => {
-      if (!item || ids.has(item.id)) return false;
-      ids.add(item.id);
-      return true;
-    }).slice(0, MAX_ITEMS);
+    /** @type {Set<string>} */
+const ids = new Set();
+
+/** @type {NonNullable<ReturnType<typeof normalize>>[]} */
+const items = [];
+
+for (const value of raw) {
+  const item = normalize(value);
+  if (!item || ids.has(item.id)) continue;
+
+  ids.add(item.id);
+  items.push(item);
+
+  if (items.length >= MAX_ITEMS) break;
+}
+
+return items;
   } catch { return []; }
 }
 

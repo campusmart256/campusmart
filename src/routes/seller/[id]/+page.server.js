@@ -28,11 +28,16 @@ export const load = async ({ params, locals, url }) => {
     const { data: items, error: listingsError } = await query.limit(60);
     if (listingsError) console.error('seller storefront listings failed:', listingsError.code, listingsError.message);
     let listings = (items ?? []).map((l) => {
-        const cover = [...(l.listing_images ?? [])].sort((a, b) => a.position - b.position)[0];
-        return {
+    const cover = [...(l.listing_images ?? [])].sort((a, b) => a.position - b.position)[0];
+
+    const category = Array.isArray(l.categories)
+        ? l.categories[0]
+        : l.categories;
+
+    return {
             id: l.id, title: l.title, price: l.price_ugx,
             condition: l.condition, negotiable: l.is_negotiable,
-            category: l.categories?.name ?? '', seller: profile.display_name ?? 'Seller',
+            category: category?.name ?? '', seller: profile.display_name ?? 'Seller',
             cover: cover?.storage_path ?? null,
             verified: profile.verification_status === 'verified',
             own: l.seller_id === viewer?.id
@@ -47,7 +52,13 @@ export const load = async ({ params, locals, url }) => {
         listings = listings.map((l) => ({ ...l, saved: savedIds.has(l.id) }));
     }
 
-    let reviews = [];
+    /**
+ * @type {Array<{
+ *   rating: number | string,
+ *   [key: string]: any
+ * }>}
+ */
+let reviews = [];
     let reviewsUnavailable = false;
     try {
         const result = await locals.supabase.rpc('get_public_seller_reviews', { p_seller_id: params.id });

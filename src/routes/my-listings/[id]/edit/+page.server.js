@@ -61,12 +61,16 @@ export const actions = {
 		if (!EDITABLE.includes(listing.status)) redirect(303, '/my-listings');
 		const listingId = listing.id;
 
-		const form = await request.formData();
-		const intent = form.get('intent') === 'publish' && listing.status === 'draft' ? 'publish' : 'save';
-		const values = readListingFields(form);
-		const errors = validateListing(values);
-		const requestedQuantity = String(form.get('quantity') ?? '').trim();
-		values.quantity = requestedQuantity;
+	const form = await request.formData();
+	const intent = form.get('intent') === 'publish' && listing.status === 'draft' ? 'publish' : 'save';
+	const requestedQuantity = String(form.get('quantity') ?? '').trim();
+
+	const values = {
+    ...readListingFields(form),
+    quantity: requestedQuantity
+};
+
+	const errors = validateListing(values);
 		if (!/^[1-9]\d*$/.test(requestedQuantity) || Number(requestedQuantity) > 100000) {
 			errors.quantity = 'Enter a whole number between 1 and 100,000.';
 		}

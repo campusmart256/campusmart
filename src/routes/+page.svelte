@@ -25,7 +25,12 @@
 	function navigate(url) { goto(url, { reset: false }); }
 
 	const hasFilters = $derived(Boolean(data.filters.category || data.filters.verifiedOnly || data.filters.q));
-	const activeCategory = $derived(data.categories.find((c) => c.slug === data.filters.category)?.name ?? '');
+const activeCategory = $derived(
+    data.categories.find(
+        /** @param {{ id: string, slug: string, name: string }} c */
+        (c) => c.slug === data.filters.category
+    )?.name ?? ''
+);
 </script>
 
 <svelte:head>

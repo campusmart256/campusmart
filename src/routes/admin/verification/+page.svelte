@@ -8,11 +8,13 @@
 		{ label: 'Rejected', href: '/admin/verification?status=rejected', status: 'rejected' }
 	];
 
-	function dateText(value) {
+	/** @param {string | null | undefined} value */
+function dateText(value) {
 		if (!value) return 'Unknown date';
 		return new Date(value).toLocaleString();
 	}
 
+	/** @param {number | null | undefined} bytes */
 	function fileSize(bytes) {
 		if (!bytes) return 'Unknown size';
 		if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;

@@ -4,38 +4,68 @@
 	import { createBrowserClient } from '@supabase/ssr';
 	import { onMount, tick } from 'svelte';
 
-	let { data, form } = $props();
-	let body = $state(form?.body ?? '');
+	/** @typedef {import('./$types').PageData['messages'][number]} ChatMessage */
+
+let { data, form } = $props();
+let body = $state('');
+
+$effect(() => {
+    if (form && 'body' in form && typeof form.body === 'string') {
+        body = form.body;
+    }
+});
 	let messageList = $state();
 	let messageBox = $state();
 	let realtimeStatus = $state('starting');
 	// Realtime status is kept internally for debugging but is not shown to normal users.
 	let realtimeText = $state('Starting live updates...');
 	let safetyOpen = $state(false);
-	let replyTo = $state(null);
+/** @type {ChatMessage | null} */
+let replyTo = $state(null);
 	let contactDialogOpen = $state(false);
-	let swipe = $state({ id: null, dx: 0, startX: 0, startY: 0 });
-	let deleteMenuFor = $state(null);
-	let longPressTimer;
-	const other = $derived(data.userId === data.conversation.buyer_id ? data.conversation.seller?.display_name : data.conversation.buyer?.display_name);
+	/** @type {{ id: number | null, dx: number, startX: number, startY: number }} */
+let swipe = $state({ id: null, dx: 0, startX: 0, startY: 0 });
+	/** @type {number | null} */
+let deleteMenuFor = $state(null);
+/** @type {Map<string, number>} */
+const longPressTimers = new Map();
+	const otherProfile = $derived(
+    data.userId === data.conversation.buyer_id
+        ? data.conversation.seller
+        : data.conversation.buyer
+);
+
+const other = $derived(
+    (Array.isArray(otherProfile) ? otherProfile[0] : otherProfile)?.display_name
+);
+
+		const listing = $derived(
+    Array.isArray(data.conversation.listings)
+        ? data.conversation.listings[0]
+        : data.conversation.listings
+);
 	const isBlocked = $derived(data.isBlockedByMe);
 	const isBuyer = $derived(data.userId === data.conversation.buyer_id);
 	const messageById = $derived(Object.fromEntries((data.messages ?? []).map((m) => [String(m.id), m])));
 
+	/** @param {ChatMessage | null} message */
 	function messageSenderName(message) {
 		return message?.sender_id === data.userId ? 'You' : other ?? 'Student';
 	}
 
+	/** @param {string | null | undefined} text */
 	function shortMessage(text, limit = 90) {
 		const clean = String(text ?? '').replace(/\s+/g, ' ').trim();
 		return clean.length > limit ? `${clean.slice(0, limit - 1)}…` : clean;
 	}
 
+	/** @param {ChatMessage} message */
 	function quotedMessage(message) {
 		if (!message?.reply_to_message_id) return null;
 		return messageById[String(message.reply_to_message_id)] ?? null;
 	}
 
+	/** @param {ChatMessage} message */
 	async function chooseReply(message) {
 		replyTo = message;
 		await tick();
@@ -58,30 +88,44 @@
 		return confirm('Unsend this message? It will be hidden from this chat, but preserved for safety review.');
 	}
 
+	/** @param {ChatMessage} message */
 	function canUnsend(message) {
 		return data.unsendStatusAvailable && message.sender_id === data.userId && !message.read_at;
 	}
 
 	function clearLongPress() {
-		if (longPressTimer) clearTimeout(longPressTimer);
-		longPressTimer = null;
-	}
+    const timer = longPressTimers.get('active');
 
+    if (timer !== undefined) {
+        clearTimeout(timer);
+        longPressTimers.delete('active');
+    }
+}
+
+	/**
+ * @param {PointerEvent} event
+ * @param {ChatMessage} message
+ */
 	function beginMessagePress(event, message) {
 		beginSwipe(event, message);
 		clearLongPress();
-		longPressTimer = setTimeout(() => {
-			deleteMenuFor = message.id;
-			swipe = { id: null, dx: 0, startX: 0, startY: 0 };
-			if (navigator?.vibrate) navigator.vibrate(18);
-		}, 560);
+longPressTimers.set('active', setTimeout(() => {
+    deleteMenuFor = message.id;
+    swipe = { id: null, dx: 0, startX: 0, startY: 0 };
+    if (navigator?.vibrate) navigator.vibrate(18);
+}, 560));
 	}
 
+	/**
+ * @param {PointerEvent} event
+ * @param {ChatMessage} message
+ */
 	function moveMessagePress(event, message) {
 		moveSwipe(event, message);
 		if (swipe.id === message.id && swipe.dx > 10) clearLongPress();
 	}
 
+	/** @param {ChatMessage} message */
 	function endMessagePress(message) {
 		clearLongPress();
 		endSwipe(message);
@@ -91,11 +135,19 @@
 		deleteMenuFor = null;
 	}
 
+	/**
+ * @param {PointerEvent} event
+ * @param {ChatMessage} message
+ */
 	function beginSwipe(event, message) {
 		if (event.pointerType === 'mouse' && event.button !== 0) return;
 		swipe = { id: message.id, dx: 0, startX: event.clientX, startY: event.clientY };
 	}
 
+	/**
+ * @param {PointerEvent} event
+ * @param {ChatMessage} message
+ */
 	function moveSwipe(event, message) {
 		if (swipe.id !== message.id) return;
 		const dx = event.clientX - swipe.startX;
@@ -107,6 +159,7 @@
 		swipe = { ...swipe, dx: Math.min(dx, 72) };
 	}
 
+	/** @param {ChatMessage} message */
 	function endSwipe(message) {
 		if (swipe.id === message.id && swipe.dx >= 44) chooseReply(message);
 		swipe = { id: null, dx: 0, startX: 0, startY: 0 };
@@ -177,7 +230,7 @@
 	<div class="chat-person">
 		<span class="chat-overline">CAMPUSMART CONVERSATION</span>
 		<h1>{other ?? 'Student'}<span class="chat-accent">.</span></h1>
-		<p class="chat-item">Discussing <strong>{data.conversation.listings?.title ?? 'Item'}</strong></p>
+		<p class="chat-item">Discussing <strong>{listing?.title ?? 'Item'}</strong></p>
 	</div>
 	<div class="chat-actions">
 		<div class="safety-menu">
@@ -259,8 +312,14 @@
 {#if form?.deleteSuccess}<div class="notice tip">{form.deleteSuccess}</div>{/if}
 {#if form?.deleteMessage}<div class="notice warn" role="alert">{form.deleteMessage}</div>{/if}
 {#if contactDialogOpen && form?.whatsappLink}
-	<div class="modal-backdrop" role="presentation" onclick={closeContactDialog}>
-		<section class="contact-dialog card" role="dialog" aria-modal="true" aria-labelledby="contact-dialog-title" onclick={(event) => event.stopPropagation()}>
+<div
+    class="modal-backdrop"
+    role="presentation"
+    onclick={(event) => {
+        if (event.target === event.currentTarget) closeContactDialog();
+    }}
+>
+    <div class="contact-dialog card" role="dialog" aria-modal="true" aria-labelledby="contact-dialog-title">
 			<div class="dialog-icon">✓</div>
 			<h2 id="contact-dialog-title">Contact seller?</h2>
 			<p class="muted">The seller's WhatsApp number has been revealed. Choose how you want to contact them.</p>
@@ -271,14 +330,15 @@
 				<button class="btn secondary" type="button" onclick={closeContactDialog}>Cancel</button>
 			</div>
 			<p class="muted small-note">Meet in public and inspect the item before paying.</p>
-		</section>
-	</div>
+    </div>
+</div>
 {/if}
 {#if isBlocked}<div class="notice warn">You blocked {other ?? 'this user'}. Messaging is paused until you unblock them.</div>{/if}
 
 <div class="messages card" aria-label="Messages" bind:this={messageList}>
 	{#if !data.messages.length}<p class="muted">No messages yet. Say hello!</p>{/if}
 	{#each data.messages as m (m.id)}
+		{@const quoted = quotedMessage(m)}
 		<div class:mine={m.sender_id === data.userId} class="bubble-wrap">
 			<div class="message-tools">
 				<button class="quick-reply" type="button" aria-label="Reply to this message" title="Reply" onclick={() => chooseReply(m)}>↩</button>
@@ -299,6 +359,7 @@
 				{/if}
 			</div>
 			<div
+				role="group"
 				class:delete-selected={deleteMenuFor === m.id}
 				class="bubble"
 				style={`transform: translateX(${swipe.id === m.id ? swipe.dx : 0}px);`}
@@ -307,13 +368,12 @@
 				onpointerup={() => endMessagePress(m)}
 				onpointercancel={() => { clearLongPress(); swipe = { id: null, dx: 0, startX: 0, startY: 0 }; }}
 			>
-				{#if quotedMessage(m)}
-					{@const quoted = quotedMessage(m)}
-					<div class="quoted-message" aria-label="Replied message">
-						<strong>{messageSenderName(quoted)}</strong>
-						<span>{shortMessage(quoted.body)}</span>
-					</div>
-				{/if}
+				{#if quoted}
+    <div class="quoted-message" aria-label="Replied message">
+        <strong>{messageSenderName(quoted)}</strong>
+        <span>{shortMessage(quoted.body)}</span>
+    </div>
+{/if}
 				<div>{m.body}</div>
 				<small class="muted">{new Date(m.created_at).toLocaleString()}</small>
 			</div>

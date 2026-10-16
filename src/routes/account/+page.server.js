@@ -1,7 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { cleanText, validateDisplayName, normalizePhone } from '#lib/validation.js';
 import { readImageFiles, storeAvatar, removePhotos } from '#lib/server/photos.js';
-import { readVerificationDocument, storeVerificationDocument, removeVerificationDocuments } from '#lib/server/verification-documents.js';
+import { readVerificationDocument, storeVerificationDocument } from '#lib/server/verification-documents.js';
 import { AVATAR_KEY_RE } from '#lib/avatar.js';
 
 export const load = async ({ locals, url }) => {
@@ -138,7 +138,13 @@ export const actions = {
 		if ('error' in documentRead) errors.studentProof = documentRead.error;
 
 		if (Object.keys(errors).length) return fail(400, { section: 'verification', values, errors });
-
+if (!('document' in documentRead)) {
+    return fail(400, {
+        section: 'verification',
+        values,
+        errors: { studentProof: 'Please upload a valid verification document.' }
+    });
+}
 		const { data: profile } = await locals.supabase
 			.from('profiles')
 			.select('verification_status')
@@ -169,8 +175,10 @@ export const actions = {
 		});
 
 		if (error) {
-			await removeVerificationDocuments([documentPath]);
-			console.error('verification request failed:', error.code, error.message);
+			// Do not delete the R2 object here: a network failure may leave
+			// the database insert committed even when the client sees an error.
+			// Retain the object for a separate, reviewed orphan-reconciliation process.
+			console.error('verification request failed; document retained for reconciliation:', error.code, error.message);
 			let message = 'We could not send your verification request. Please try again.';
 			if (error.code === '23505') message = 'You already have a pending request, or this registration number has already been used.';
 			else if (error.message?.toLowerCase().includes('too many')) message = 'Too many verification requests this week. Try again later.';

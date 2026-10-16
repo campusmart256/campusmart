@@ -3,6 +3,7 @@ import { cleanText, isUuid } from '#lib/validation.js';
 
 const statusOptions = new Set(['open', 'actioned', 'dismissed']);
 
+/** @param {import('./$types').PageServerLoadEvent['locals']} locals */
 async function requireStaff(locals) {
 	const user = await locals.getUser();
 	if (!user) redirect(303, '/signin?next=/admin/reports');
@@ -21,6 +22,14 @@ async function requireStaff(locals) {
 	return { user, role: data.role };
 }
 
+/**
+ * @param {{
+ *   listing_id?: string | null,
+ *   target_listing_id?: string | null,
+ *   conversation_id?: string | null,
+ *   target_user_id?: string | null
+ * }} report
+ */
 function reportType(report) {
 	if (report.listing_id || report.target_listing_id) return 'listing';
 	if (report.conversation_id) return 'conversation';

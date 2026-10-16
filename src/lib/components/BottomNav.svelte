@@ -17,7 +17,7 @@
 			<a class="sellfab" href={item.href} aria-label="Sell an item" aria-current={pathname === item.href ? 'page' : undefined}><Icon name="plus" size={26} /></a>
 		{:else}
 			<a href={item.href} aria-current={pathname === item.href || (item.label === 'Profile' && pathname === '/account') ? 'page' : undefined}>
-				<span class="iconwrap"><Icon name={item.icon} size={22} />{#if item.count > 0}<span class="badge" aria-label={`${item.count} unread messages`}>{item.count > 99 ? '99+' : item.count}</span>{/if}</span><span>{item.label}</span>
+				<span class="iconwrap"><Icon name={item.icon} size={22} />{#if (item.count ?? 0) > 0}<span class="badge" aria-label={`${item.count} unread messages`}>{(item.count ?? 0) > 99 ? '99+' : item.count}</span>{/if}</span><span>{item.label}</span>
 			</a>
 		{/if}
 	{/each}

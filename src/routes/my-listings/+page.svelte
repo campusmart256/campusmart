@@ -5,6 +5,33 @@
 
 	/** @type {{ data: any, form: any }} */
 	let { data, form } = $props();
+	/**
+ * @typedef {{
+ *   id: string,
+ *   title: string,
+ *   quantityAvailable: number | null
+ * }} InventoryItem
+ */
+
+/**
+ * @typedef {{
+ *   id: string,
+ *   listingId: string,
+ *   itemTitle: string,
+ *   buyerName: string,
+ *   buyerType: string,
+ *   quantity: number,
+ *   createdAt: string
+ * }} SaleItem
+ */
+
+const inventoryItems = $derived(
+    /** @type {InventoryItem[]} */ (data.listings)
+);
+
+const saleItems = $derived(
+    /** @type {SaleItem[]} */ (data.salesHistory)
+);
 
 	const tabs = [['dashboard', 'Dashboard'], ['active', 'Active'], ['drafts', 'Drafts'], ['sold', 'Sold'], ['expired', 'Expired'], ['bought', 'Bought items'], ['sales', 'Sales history'], ['inventory', 'Inventory']];
 	const verified = $derived(data.profile?.verification_status === 'verified');
@@ -18,10 +45,10 @@
 	let inventoryFilter = $state('all');
 	let inventorySort = $state('low');
 	const filteredInventory = $derived.by(() => {
-		if (data.tab !== 'inventory') return data.listings;
+		if (data.tab !== 'inventory') return inventoryItems;
 		const query = inventoryQuery.trim().toLocaleLowerCase();
-		return data.listings
-			.filter((item) => {
+		return inventoryItems
+    .filter((item) => {
 				const stock = item.quantityAvailable ?? 1;
 				return (!query || item.title.toLocaleLowerCase().includes(query)) &&
 					(inventoryFilter === 'all' || (inventoryFilter === 'low' ? stock <= 3 : stock > 3));
@@ -44,7 +71,7 @@
 		const query = salesQuery.trim().toLocaleLowerCase();
 		const now = Date.now();
 		const cutoff = salesDateFilter === '30' ? now - 30 * 86400000 : salesDateFilter === '90' ? now - 90 * 86400000 : null;
-		return data.salesHistory.filter((sale) => {
+		return saleItems.filter((sale) => {
 			const matchesQuery = !query || sale.itemTitle.toLocaleLowerCase().includes(query) || sale.buyerName.toLocaleLowerCase().includes(query);
 			const matchesBuyer = salesBuyerFilter === 'all' || sale.buyerType === salesBuyerFilter;
 			const matchesDate = cutoff === null || new Date(sale.createdAt).getTime() >= cutoff;
@@ -237,7 +264,7 @@
 		{:else}
 			<div class="card sales-overview">
 				<div><span class="muted">Recorded sales</span><strong>{data.salesHistory.length}</strong></div>
-				<div><span class="muted">Units sold</span><strong>{data.salesHistory.reduce((sum, sale) => sum + sale.quantity, 0)}</strong></div>
+				<div><span class="muted">Units sold</span><strong>{saleItems.reduce((sum, sale) => sum + sale.quantity, 0)}</strong></div>
 			</div>
 			{#if data.salesHistory.length > 0}
 				<div class="card sales-tools" aria-label="Sales history search and filters">

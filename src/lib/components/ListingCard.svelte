@@ -1,8 +1,31 @@
 <script>
-	import { formatNumber, CONDITION_LABELS } from '#lib/format.js';
-	import Icon from './Icon.svelte';
-	/** @type {{ l: { id: string, title: string, price: number, condition: string, negotiable: boolean, category: string, seller: string, cover: string | null, verified: boolean, saved?: boolean, own?: boolean }, signedIn?: boolean, returnTo?: string } }} */
-	let { l, signedIn = false, returnTo = '/' } = $props();
+    import { formatNumber, CONDITION_LABELS } from '#lib/format.js';
+    import Icon from './Icon.svelte';
+
+    /**
+     * @typedef {object} Listing
+     * @property {string} id
+     * @property {string} title
+     * @property {number} price
+     * @property {string} condition
+     * @property {boolean} negotiable
+     * @property {string} category
+     * @property {string} seller
+     * @property {string | null} cover
+     * @property {boolean} verified
+     * @property {boolean} [saved]
+     * @property {boolean} [own]
+     */
+
+    /**
+     * @typedef {object} Props
+     * @property {Listing} l
+     * @property {boolean} [signedIn]
+     * @property {string} [returnTo]
+     */
+
+    /** @type {Props} */
+    let { l, signedIn = false, returnTo = '/' } = $props();
 </script>
 
 <div class="saved-card-wrap">

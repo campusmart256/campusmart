@@ -3,12 +3,21 @@ import { isUuid } from '#lib/validation.js';
 
 const reportReasons = new Set(['scam_or_fake', 'prohibited_item', 'harassment', 'other']);
 
+/**
+ * @param {string | null | undefined} number
+ * @param {string | null | undefined} listingTitle
+ */
 function whatsappLink(number, listingTitle) {
 	const digits = String(number ?? '').replace(/\D/g, '');
 	const message = `Hi, I saw your ${listingTitle || 'item'} on CampusMart. Is it still available?`;
 	return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
 }
 
+/**
+ * @param {import('@sveltejs/kit').RequestEvent['locals']} locals
+ * @param {string} conversationId
+ * @param {string} userId
+ */
 async function loadConversation(locals, conversationId, userId) {
 	const result = await locals.supabase
 		.from('conversations')
@@ -21,10 +30,19 @@ async function loadConversation(locals, conversationId, userId) {
 	return result.data;
 }
 
+/**
+ * @param {{ buyer_id: string, seller_id: string }} conversation
+ * @param {string} userId
+ */
 function otherParticipant(conversation, userId) {
 	return userId === conversation.buyer_id ? conversation.seller_id : conversation.buyer_id;
 }
 
+/**
+ * @param {import('@sveltejs/kit').RequestEvent['locals']} locals
+ * @param {string} conversationId
+ * @param {string} userId
+ */
 async function loadWhatsappConversation(locals, conversationId, userId) {
 	const result = await locals.supabase
 		.from('conversations')
@@ -55,41 +73,65 @@ export const load = async ({ params, locals }) => {
 	if (markRead.error) console.error('mark_conversation_read failed:', markRead.error.code, markRead.error.message);
 
 	let replyStatusAvailable = true;
-	let deleteStatusAvailable = true;
-	let unsendStatusAvailable = true;
-	let messages = await locals.supabase
-		.from('messages')
-		.select('id, sender_id, body, created_at, read_at, reply_to_message_id, unsent_at, unsent_by')
-		.eq('conversation_id', params.id)
-		.order('created_at', { ascending: false })
-		.limit(100);
+let deleteStatusAvailable = true;
+let unsendStatusAvailable = true;
 
-	if (messages.error) {
-		unsendStatusAvailable = false;
-		messages = await locals.supabase
-			.from('messages')
-			.select('id, sender_id, body, created_at, read_at, reply_to_message_id')
-			.eq('conversation_id', params.id)
-			.order('created_at', { ascending: false })
-			.limit(100);
-	}
+/**
+ * @type {Array<{
+ *   id: number,
+ *   sender_id: string,
+ *   body: string | null,
+ *   created_at: string,
+ *   read_at: string | null,
+ *   reply_to_message_id?: number | null,
+ *   unsent_at?: string | null,
+ *   unsent_by?: string | null
+ * }>}
+ */
+let visibleMessages = [];
 
-	if (messages.error) {
-		replyStatusAvailable = false;
-		messages = await locals.supabase
-			.from('messages')
-			.select('id, sender_id, body, created_at, read_at')
-			.eq('conversation_id', params.id)
-			.order('created_at', { ascending: false })
-			.limit(100);
-	}
+const fullMessagesResult = await locals.supabase
+    .from('messages')
+    .select('id, sender_id, body, created_at, read_at, reply_to_message_id, unsent_at, unsent_by')
+    .eq('conversation_id', params.id)
+    .order('created_at', { ascending: false })
+    .limit(100);
 
-	if (messages.error) error(500, 'Could not load messages');
+if (!fullMessagesResult.error) {
+    visibleMessages = fullMessagesResult.data ?? [];
+} else {
+    unsendStatusAvailable = false;
 
-	let visibleMessages = messages.data ?? [];
-	if (unsendStatusAvailable) {
-		visibleMessages = visibleMessages.filter((m) => !m.unsent_at);
-	}
+    const replyMessagesResult = await locals.supabase
+        .from('messages')
+        .select('id, sender_id, body, created_at, read_at, reply_to_message_id')
+        .eq('conversation_id', params.id)
+        .order('created_at', { ascending: false })
+        .limit(100);
+
+    if (!replyMessagesResult.error) {
+        visibleMessages = replyMessagesResult.data ?? [];
+    } else {
+        replyStatusAvailable = false;
+
+        const basicMessagesResult = await locals.supabase
+            .from('messages')
+            .select('id, sender_id, body, created_at, read_at')
+            .eq('conversation_id', params.id)
+            .order('created_at', { ascending: false })
+            .limit(100);
+
+        if (basicMessagesResult.error) {
+            error(500, 'Could not load messages');
+        }
+
+        visibleMessages = basicMessagesResult.data ?? [];
+    }
+}
+
+if (unsendStatusAvailable) {
+    visibleMessages = visibleMessages.filter((m) => !m.unsent_at);
+}
 	if (visibleMessages.length) {
 		const hideResult = await locals.supabase
 			.from('message_deletions')

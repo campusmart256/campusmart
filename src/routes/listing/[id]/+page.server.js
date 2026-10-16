@@ -71,7 +71,8 @@ export const load = async ({ params, locals, url }) => {
 
 	// Seller feedback is shared across every listing owned by this seller.
 	// The read-only RPC exposes only public review fields from completed sales.
-	let sellerReviews = [];
+	/** @type {{ rating: number | string | null }[]} */
+let sellerReviews = [];
 	let sellerReviewsUnavailable = false;
 	try {
 		const { data: reviews, error: reviewsError } = await locals.supabase.rpc('get_public_seller_reviews', {
@@ -97,7 +98,7 @@ export const load = async ({ params, locals, url }) => {
 		const { data: sale } = await locals.supabase.from('listing_sales').select('id').eq('listing_id', row.id).eq('buyer_id', user.id).limit(1).maybeSingle();
 		hasPurchased = !!sale;
 	}
-	if (hasPurchased) {
+	if (user && hasPurchased) {
 		try {
 			const { data: review, error: buyerReviewError } = await locals.supabase
 				.from('item_reviews')

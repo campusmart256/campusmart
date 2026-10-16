@@ -8,7 +8,7 @@
 	import { onMount } from 'svelte';
 	import { rememberListing } from '#lib/recentlyViewed.js';
 
-	/** @type {{ data: any }} */
+	/** @type {{ data: any, form: any }} */
 	let { data, form } = $props();
 	const l = $derived(data.listing);
 	const isActive = $derived(l.status === 'active');

@@ -117,7 +117,13 @@ export const load = async ({ locals, url }) => {
 		}
 	}
 	const rows = /** @type {any[]} */ (data ?? []);
-	const counts = Object.fromEntries(Object.entries(TABS).map(([name, statuses]) => [name, rows.filter((r) => statuses.includes(r.status)).length]));
+	/** @type {Record<string, number | null>} */
+const counts = Object.fromEntries(
+    Object.entries(TABS).map(([name, statuses]) => [
+        name,
+        rows.filter((r) => statuses.includes(r.status)).length
+    ])
+);
 	const now = Date.now();
 	const listings = (tab === 'bought' ? boughtRows : rows)
 		.filter((r) => tab === 'bought' || TABS[tab].includes(r.status))
@@ -139,7 +145,18 @@ export const load = async ({ locals, url }) => {
 	};
 	// Dashboard review summary uses the seller's own reviews. A failed review query
 	// should not hide the inventory or sales metrics.
-	let reviewStats = { count: 0, average: null, recent: [] };
+	/** @type {{
+ *   count: number,
+ *   average: number | null,
+ *   recent: Array<{
+ *     listingId: string,
+ *     itemTitle: string,
+ *     rating: number,
+ *     createdAt: string
+ *   }>
+ * }}
+ */
+let reviewStats = { count: 0, average: null, recent: [] };
 	let dashboardReviewsFailed = false;
 	if (tab === 'dashboard') {
 		const result = await locals.supabase

@@ -10,18 +10,21 @@
 		{ label: 'Dismissed', href: '/admin/reports?status=dismissed', status: 'dismissed' }
 	];
 
-	const reasons = {
+	/** @type {Record<string, string>} */
+const reasons = {
 		scam_or_fake: 'Scam or fake listing',
 		prohibited_item: 'Prohibited item',
 		harassment: 'Harassment or unsafe seller',
 		other: 'Other'
 	};
 
-	function dateText(value) {
+	/** @param {string | null | undefined} value */
+function dateText(value) {
 		if (!value) return 'Unknown date';
 		return new Date(value).toLocaleString();
 	}
 
+	/** @param {string} type */
 	function typeLabel(type) {
 		if (type === 'listing') return 'Item report';
 		if (type === 'conversation') return 'Chat report';

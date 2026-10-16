@@ -1,6 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import { cleanText } from '#lib/validation.js';
 
+/** @param {import('./$types').PageServerLoadEvent['locals']} locals */
 async function requireStaff(locals) {
 	const user = await locals.getUser();
 	if (!user) redirect(303, '/signin?next=/admin/verification');

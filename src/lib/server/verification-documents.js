@@ -2,7 +2,7 @@ import { env } from 'cloudflare:workers';
 import { sniffImage } from './photos.js';
 
 export const MAX_VERIFICATION_DOCUMENT_BYTES = 5_000_000;
-export const VERIFICATION_DOCUMENT_KEY_RE = /^verification\/[0-9a-f-]{36}\/[0-9a-f-]{36}\.(jpg|png|webp|pdf)$/;
+export const VERIFICATION_DOCUMENT_KEY_RE = /^verification\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(jpg|png|webp|pdf)$/;
 
 /**
  * @param {Uint8Array} bytes
@@ -57,9 +57,19 @@ export async function storeVerificationDocument(userId, document) {
 	return key;
 }
 
-/** @param {string[]} keys */
+/**
+ * Deletes only correctly formatted verification-document keys.
+ * Callers must independently establish ownership and deletion authorization.
+ * Errors propagate so callers cannot mistake a failed deletion for success.
+ * @param {string[]} keys
+ */
 export async function removeVerificationDocuments(keys) {
-	if (keys.length) await env.PHOTOS.delete(keys).catch(() => {});
+	if (!Array.isArray(keys) || !keys.every((key) =>
+		typeof key === 'string' && VERIFICATION_DOCUMENT_KEY_RE.test(key)
+	)) {
+		throw new Error('Unsafe verification document deletion key');
+	}
+	if (keys.length) await env.PHOTOS.delete(keys);
 }
 
 /**

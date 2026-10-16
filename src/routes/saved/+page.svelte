@@ -6,6 +6,24 @@
 
   /** @type {{ data: any, form: any }} */
   let { data, form } = $props();
+  /**
+ * @typedef {{
+ *   id: string,
+ *   title: string,
+ *   price: number,
+ *   condition: string,
+ *   negotiable: boolean,
+ *   category: string,
+ *   seller: string,
+ *   cover: string | null,
+ *   verified: boolean,
+ *   saved: boolean
+ * }} SavedItem
+ */
+
+const savedListings = $derived(
+    /** @type {SavedItem[]} */ (data.listings)
+);
 
   let search = $state('');
   let category = $state('all');
@@ -14,10 +32,13 @@
   let selectedIds = $state([]);
   let selectionMessage = $state('');
 
-  const categories = $derived([...new Set(data.listings.map((item) => item.category).filter(Boolean))].sort((a, b) => a.localeCompare(b)));
+  const categories = $derived(
+    [...new Set(savedListings.map((item) => item.category).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b))
+);
   const visibleListings = $derived.by(() => {
     const query = search.trim().toLocaleLowerCase();
-    const matches = data.listings.filter((item) =>
+    const matches = savedListings.filter((item) =>
       (!query || `${item.title} ${item.seller} ${item.category}`.toLocaleLowerCase().includes(query)) &&
       (category === 'all' || item.category === category)
     );
@@ -26,7 +47,11 @@
     if (sort === 'title') return [...matches].sort((a, b) => a.title.localeCompare(b.title));
     return matches; // Saved most recently first, as returned by the server.
   });
-  const compared = $derived(selectedIds.map((id) => data.listings.find((item) => item.id === id)).filter(Boolean));
+  const compared = $derived(
+    selectedIds
+        .map((id) => savedListings.find((item) => item.id === id))
+        .filter((item) => item !== undefined)
+);
 
   /** @param {string} id */
   function toggleCompare(id) {
@@ -75,7 +100,7 @@
           <button class="btn btn2" type="button" onclick={clearComparison}>Clear selection</button>
         </div>
         {#if compared.length >= 2}
-          <div class="compare-scroll" tabindex="0" role="region" aria-label="Side-by-side saved item comparison">
+          <div class="compare-scroll" role="region" aria-label="Side-by-side saved item comparison">
             <table>
               <thead><tr><th scope="col">Details</th>{#each compared as item (item.id)}<th scope="col"><a href="/listing/{item.id}">{item.title}</a></th>{/each}</tr></thead>
               <tbody>

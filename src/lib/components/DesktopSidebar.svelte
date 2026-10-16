@@ -16,7 +16,8 @@
 		{ label: 'Sell an item', href: '/sell', icon: 'plus', primary: true }
 	]);
 
-	function active(href) {
+	/** @param {string} href */
+function active(href) {
 		return pathname === href || (href !== '/' && pathname.startsWith(href + '/'));
 	}
 </script>
@@ -38,7 +39,11 @@
 			<a class:item-primary={item.primary} class="item" href={item.href} title={item.label} aria-label={item.label} aria-current={active(item.href) ? 'page' : undefined}>
 				<Icon name={item.icon} size={20} />
 				<span class="label">{item.label}</span>
-				{#if item.count > 0}<span class="badge" aria-label={`${item.count} unread messages`}>{item.count > 99 ? '99+' : item.count}</span>{:else if item.soon}<span class="soon">Soon</span>{/if}
+	{#if (item.count ?? 0) > 0}
+    <span class="badge" aria-label={`${item.count} unread messages`}>
+        {(item.count ?? 0) > 99 ? '99+' : item.count}
+    </span>
+{/if}
 			</a>
 		{/each}
 	</nav>
@@ -94,7 +99,6 @@
 		.item-primary { background: var(--red); color: #fff; margin-top: 6px; }
 		.item-primary:hover, .item-primary[aria-current='page'] { background: var(--red-dark); color: #fff; }
 		.label { flex: 1; min-width: 0; }
-		.soon { font-size: 11px; font-weight: 800; color: var(--mute); border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; background: #fff; }
 		.badge { min-width: 22px; height: 22px; padding: 0 7px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; background: var(--red); color: #fff; font-size: 12px; font-weight: 900; }
 		.btnrow { background: none; border: 0; cursor: pointer; }
 		form { margin: 0; }
@@ -109,11 +113,9 @@
 		.compact .item, .compact .user-card { width: 52px; height: 52px; min-height: 52px; padding: 0; justify-content: center; gap: 0; border-radius: 16px; position: relative; }
 		.compact .item-primary { margin-top: 0; }
 		.compact .label, .compact .small { display: none; }
-		.compact .soon { display: none; }
 		.compact .badge { position: absolute; top: -4px; right: -4px; min-width: 20px; height: 20px; padding: 0 6px; font-size: 11px; box-shadow: 0 0 0 2px #fff; }
 		.compact form { width: 52px; }
 	}
-
 	/* Phase 59.3: polished compact navigation on listing detail pages. */
 	@media (min-width: 900px) {
 		.desktop-side { scrollbar-width: thin; scrollbar-color: #d9dce2 transparent; }
