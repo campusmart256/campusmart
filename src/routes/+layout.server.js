@@ -3,6 +3,7 @@ export const load = async ({ locals }) => {
 	const user = await locals.getUser();
 	let profile = null;
 	let isStaff = false;
+	let staffRole = null;
 	let unreadMessages = 0;
 	let pendingVerificationRequests = 0;
 	let pendingReports = 0;
@@ -15,6 +16,7 @@ export const load = async ({ locals }) => {
 		]);
 		profile = profileResult.data ?? null;
 		isStaff = !!staffResult.data;
+		staffRole = staffResult.data?.role ?? null;
 
 		if (isStaff) {
 			const [pendingResult, reportsResult] = await Promise.all([
@@ -81,5 +83,5 @@ export const load = async ({ locals }) => {
 			unreadMessages = unreadResult.count ?? 0;
 		}
 	}
-	return { user, profile, isStaff, unreadMessages, pendingVerificationRequests, pendingReports, savedPriceDropAlerts };
+	return { user, profile, isStaff, staffRole, unreadMessages, pendingVerificationRequests, pendingReports, savedPriceDropAlerts };
 };

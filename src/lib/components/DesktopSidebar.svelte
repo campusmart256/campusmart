@@ -3,8 +3,8 @@
 	import Icon from './Icon.svelte';
 	import Avatar from './Avatar.svelte';
 
-	/** @type {{ user: any, profile?: any, isStaff: boolean, pathname: string, unreadMessages?: number, pendingVerificationRequests?: number, pendingReports?: number, savedPriceDropAlerts?: number, compact?: boolean }} */
-	let { user, profile, isStaff, pathname, unreadMessages = 0, pendingVerificationRequests = 0, pendingReports = 0, savedPriceDropAlerts = 0, compact = false } = $props();
+	/** @type {{ user: any, profile?: any, isStaff: boolean, staffRole?: string | null, pathname: string, unreadMessages?: number, pendingVerificationRequests?: number, pendingReports?: number, savedPriceDropAlerts?: number, compact?: boolean }} */
+	let { user, profile, isStaff, staffRole = null, pathname, unreadMessages = 0, pendingVerificationRequests = 0, pendingReports = 0, savedPriceDropAlerts = 0, compact = false } = $props();
 
 	const marketplace = $derived([
 		{ label: 'Browse marketplace', href: '/', icon: 'home' },
@@ -59,6 +59,10 @@ function active(href) {
 				</span>
 			</a>
 			{#if isStaff}
+				<a class="item" href="/admin" title={staffRole === 'super_admin' ? 'Super Admin' : 'Admin Dashboard'} aria-label={staffRole === 'super_admin' ? 'Super Admin' : 'Admin Dashboard'} aria-current={pathname === '/admin' ? 'page' : undefined}>
+					<Icon name="shield" size={20} />
+					<span class="label">{staffRole === 'super_admin' ? 'Super Admin' : 'Admin Dashboard'}</span>
+				</a>
 				<a class="item" href="/admin/reports" title="Reports" aria-label="Reports" aria-current={active('/admin/reports') ? 'page' : undefined}>
 					<Icon name="shield" size={20} />
 					<span class="label">Reports</span>

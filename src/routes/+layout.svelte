@@ -101,7 +101,7 @@
 
 <svelte:window bind:scrollY onscroll={handleScroll} onkeydown={(event) => { if (event.key === 'Escape') themeMenuOpen = false; }} />
 
-<DesktopSidebar user={data.user} profile={data.profile} isStaff={data.isStaff} pathname={page.url.pathname} unreadMessages={data.unreadMessages ?? 0} pendingVerificationRequests={data.pendingVerificationRequests ?? 0} savedPriceDropAlerts={data.savedPriceDropAlerts ?? 0} />
+<DesktopSidebar user={data.user} profile={data.profile} isStaff={data.isStaff} staffRole={data.staffRole} pathname={page.url.pathname} unreadMessages={data.unreadMessages ?? 0} pendingVerificationRequests={data.pendingVerificationRequests ?? 0} savedPriceDropAlerts={data.savedPriceDropAlerts ?? 0} />
 
 <div class="app-shell">
 <header class="top" class:scrolled={scrollY > 10} style={`--header-hide: ${menuOpen ? 0 : navigationProgress}`}>
@@ -131,7 +131,7 @@
 </header>
 
 {#if menuOpen}
-	<NavDrawer user={data.user} isStaff={data.isStaff} pathname={page.url.pathname} unreadMessages={data.unreadMessages ?? 0} pendingVerificationRequests={data.pendingVerificationRequests ?? 0} savedPriceDropAlerts={data.savedPriceDropAlerts ?? 0} onclose={closeMenu} />
+	<NavDrawer user={data.user} isStaff={data.isStaff} staffRole={data.staffRole} pathname={page.url.pathname} unreadMessages={data.unreadMessages ?? 0} pendingVerificationRequests={data.pendingVerificationRequests ?? 0} savedPriceDropAlerts={data.savedPriceDropAlerts ?? 0} onclose={closeMenu} />
 {/if}
 
 <main>{@render children()}</main>

@@ -3,8 +3,8 @@
 	import Logo from './Logo.svelte';
 	import Icon from './Icon.svelte';
 
-	/** @type {{ user: any, isStaff: boolean, pathname: string, unreadMessages?: number, savedPriceDropAlerts?: number, pendingVerificationRequests?: number, pendingReports?: number, onclose: () => void }} */
-	let { user, isStaff, pathname, unreadMessages = 0, savedPriceDropAlerts = 0, pendingVerificationRequests = 0, pendingReports = 0, onclose } = $props();
+	/** @type {{ user: any, isStaff: boolean, staffRole?: string | null, pathname: string, unreadMessages?: number, savedPriceDropAlerts?: number, pendingVerificationRequests?: number, pendingReports?: number, onclose: () => void }} */
+	let { user, isStaff, staffRole = null, pathname, unreadMessages = 0, savedPriceDropAlerts = 0, pendingVerificationRequests = 0, pendingReports = 0, onclose } = $props();
 
 	const marketplace = $derived([
 		{ label: 'Browse marketplace', href: '/', icon: 'home' },
@@ -76,6 +76,10 @@
 		{#if user}
 			<a class="item" href="/account" aria-current={pathname === '/account' ? 'page' : undefined}><Icon name="user" size={20} /><span class="label">Profile &amp; verification</span></a>
 			{#if isStaff}
+				<a class="item" href="/admin" aria-current={pathname === '/admin' ? 'page' : undefined}>
+					<Icon name="shield" size={20} />
+					<span class="label">{staffRole === 'super_admin' ? 'Super Admin' : 'Admin Dashboard'}</span>
+				</a>
 				<a class="item" href="/admin/reports" aria-current={pathname.startsWith('/admin/reports') ? 'page' : undefined}>
 					<Icon name="shield" size={20} />
 					<span class="label">Reports</span>
