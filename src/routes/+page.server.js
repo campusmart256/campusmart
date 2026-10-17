@@ -1,73 +1,98 @@
 import { cleanSearchWords } from '#lib/validation.js';
 
 const SORTS = ['new', 'price_asc', 'price_desc'];
+const PAGE_SIZE = 12;
+const MAX_PAGE = 1000;
 const SELECT =
 	'id, title, description, price_ugx, condition, is_negotiable, published_at, seller_id, categories(name), listing_images(storage_path, position), profiles!listings_seller_id_fkey(display_name, verification_status)';
 
 /** The newest active listings, visible to everyone, with search and simple filters from the address. */
 export const load = async ({ locals, url }) => {
-	const user = await locals.getUser();
+	// Category visibility is public, so load it alongside authentication.
+	const userPromise = locals.getUser();
+	const categoriesPromise = locals.supabase
+		.from('categories')
+		.select('id, name, slug')
+		.eq('is_active', true)
+		.order('sort_order');
 	const slug = url.searchParams.get('category') ?? '';
 	const sortParam = url.searchParams.get('sort') ?? '';
 	const sort = SORTS.includes(sortParam) ? sortParam : 'new';
 	const verifiedOnly = url.searchParams.get('verified') === '1';
 	const words = cleanSearchWords(url.searchParams.get('q'));
 	const q = words.join(' ');
+	const rawPage = url.searchParams.get('page') ?? '1';
+	const requestedPage = /^\d{1,4}$/.test(rawPage) ? Math.min(MAX_PAGE, Math.max(1, Number(rawPage))) : 1;
 
-	const categoriesResult = await locals.supabase.from('categories').select('id, name, slug').eq('is_active', true).order('sort_order');
+	const [user, categoriesResult] = await Promise.all([userPromise, categoriesPromise]);
 	if (categoriesResult.error) console.error('categories load failed:', categoriesResult.error.code, categoriesResult.error.message);
 	const categories = categoriesResult.data ?? [];
 	const selected = categories.find((c) => c.slug === slug) ?? null;
 
-	/** A fresh listings query with the category filter and sorting applied. */
-	const base = () => {
-		let query = locals.supabase.from('listings').select(SELECT).eq('status', 'active');
-		if (selected) query = query.eq('category_id', selected.id);
-		if (sort === 'price_asc') query = query.order('price_ugx', { ascending: true });
-		else if (sort === 'price_desc') query = query.order('price_ugx', { ascending: false });
-		else query = query.order('published_at', { ascending: false });
-		return query.limit(100);
-	};
-
 	/** @type {any[]} */
 	let rows = [];
+	let currentPage = requestedPage;
+	let total = 0;
+	let hasNext = false;
 	if (!words.length) {
-		const { data, error } = await base();
-		if (error) console.error('feed load failed:', error.code, error.message);
-		rows = /** @type {any[]} */ (data ?? []);
-	} else {
-		// Candidates: items whose title or description contains the first word, plus
-		// items from sellers whose name contains it. Then every word must appear
-		// somewhere in "title + description + seller name", so "brian calculator" works.
-		const first = words[0];
-		const itemsQuery = base().or(`title.ilike.*${first}*,description.ilike.*${first}*`);
-		const sellersQuery = locals.supabase.from('profiles').select('id').ilike('display_name', `%${first}%`).limit(50);
-		const [items, sellers] = await Promise.all([itemsQuery, sellersQuery]);
-		if (items.error) console.error('search (items) failed:', items.error.code, items.error.message);
-		if (sellers.error) console.error('search (sellers) failed:', sellers.error.code, sellers.error.message);
-
-		const sellerIds = (sellers.data ?? []).map((p) => p.id);
-		/** @type {any[]} */
-		let bySeller = [];
-		if (sellerIds.length) {
-			const { data, error } = await base().in('seller_id', sellerIds);
-			if (error) console.error('search (seller listings) failed:', error.code, error.message);
-			bySeller = /** @type {any[]} */ (data ?? []);
+		// Database pagination: filter, sort and count before choosing a page.
+		// !inner ensures the verified filter applies BEFORE limiting the results.
+		const columns = verifiedOnly
+			? SELECT.replace('profiles!listings_seller_id_fkey(', 'profiles!listings_seller_id_fkey!inner(')
+			: SELECT;
+		let query = locals.supabase.from('listings').select(columns, { count: 'exact' }).eq('status', 'active');
+		if (selected) query = query.eq('category_id', selected.id);
+		if (verifiedOnly) query = query.eq('profiles.verification_status', 'verified');
+		if (sort === 'price_asc') query = query.order('price_ugx', { ascending: true }).order('id');
+		else if (sort === 'price_desc') query = query.order('price_ugx', { ascending: false }).order('id');
+		else query = query.order('published_at', { ascending: false }).order('id');
+		// Always return a valid page if a listing disappears while navigating.
+		const start = (currentPage - 1) * PAGE_SIZE;
+		let result = await query.range(start, start + PAGE_SIZE - 1);
+		if (result.error) console.error('feed load failed:', result.error.code, result.error.message);
+		total = result.count ?? 0;
+		const lastPage = Math.max(1, Math.ceil(total / PAGE_SIZE));
+		if (!result.error && currentPage > lastPage) {
+			currentPage = lastPage;
+			const lastStart = (currentPage - 1) * PAGE_SIZE;
+			result = await query.range(lastStart, lastStart + PAGE_SIZE - 1);
+			if (result.error) console.error('feed page reload failed:', result.error.code, result.error.message);
 		}
-		const lower = words.map((w) => w.toLowerCase());
-		const matches = (/** @type {any} */ l) => {
-			const text = `${l.title} ${l.description} ${l.profiles?.display_name ?? ''}`.toLowerCase();
-			return lower.every((w) => text.includes(w));
-		};
-		const byItem = /** @type {any[]} */ (items.data ?? []).filter(matches);
-		bySeller = bySeller.filter(matches);
+		rows = /** @type {any[]} */ (result.data ?? []);
+		hasNext = currentPage * PAGE_SIZE < total;
+	} else {
+		// Database-side search across listing title, description and seller name.
+		// The RPC runs as the caller and respects listings/profiles RLS.
+		const searchArgs = (/** @type {number} */ page) => ({
+			p_words: words,
+			p_category_id: selected?.id ?? null,
+			p_verified_only: verifiedOnly,
+			p_sort: sort,
+			p_page: page,
+			p_page_size: PAGE_SIZE
+		});
+		let { data: search, error: searchError } = await locals.supabase.rpc('campusmart_search_listing_ids', searchArgs(currentPage));
+		if (searchError) console.error('search RPC failed:', searchError.code, searchError.message);
+		if (!searchError && search) {
+			total = Number(search.total) || 0;
+			const lastPage = Math.max(1, Math.ceil(total / PAGE_SIZE));
+			if (currentPage > lastPage) {
+				currentPage = lastPage;
+				const retry = await locals.supabase.rpc('campusmart_search_listing_ids', searchArgs(currentPage));
+				if (retry.error) console.error('search page reload failed:', retry.error.code, retry.error.message);
+				else search = retry.data;
+			}
+			const ids = Array.isArray(search?.ids) ? search.ids : [];
+			if (ids.length) {
+				// Fetch card details through normal PostgREST/RLS; preserve the RPC's sort order.
+				const { data, error } = await locals.supabase.from('listings').select(SELECT).in('id', ids).eq('status', 'active');
+				if (error) console.error('search card fetch failed:', error.code, error.message);
+				const lookup = new Map((data ?? []).map((listing) => [listing.id, listing]));
+				rows = ids.map((/** @type {string} */ id) => lookup.get(id)).filter(Boolean);
+			}
+			hasNext = currentPage * PAGE_SIZE < total;
+		}
 
-		const merged = new Map();
-		for (const l of [...byItem, ...bySeller]) merged.set(l.id, l);
-		rows = [...merged.values()];
-		if (sort === 'price_asc') rows.sort((a, b) => a.price_ugx - b.price_ugx);
-		else if (sort === 'price_desc') rows.sort((a, b) => b.price_ugx - a.price_ugx);
-		else rows.sort((a, b) => String(b.published_at).localeCompare(String(a.published_at)));
 	}
 
 	let listings = rows.map((l) => {
@@ -85,9 +110,6 @@ export const load = async ({ locals, url }) => {
             own: l.seller_id === user?.id
 		};
 	});
-	// Filtered here (not in the database query) to keep the first version simple and safe.
-	if (verifiedOnly) listings = listings.filter((l) => l.verified);
-	listings = listings.slice(0, 48);
 
     if (user && listings.length) {
         const { data: savedRows, error: savedError } = await locals.supabase
@@ -98,5 +120,5 @@ export const load = async ({ locals, url }) => {
         listings = listings.map((l) => ({ ...l, saved: savedIds.has(l.id) }));
     }
 
-	return { listings, user, signedIn: !!user, categories, filters: { category: selected?.slug ?? '', sort, verifiedOnly, q } };
+	return { listings, user, signedIn: !!user, categories, filters: { category: selected?.slug ?? '', sort, verifiedOnly, q }, pagination: { page: currentPage, pageSize: PAGE_SIZE, total, hasPrevious: currentPage > 1, hasNext, searchLimited: false } };
 };

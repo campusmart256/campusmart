@@ -15,12 +15,13 @@
 
 	/** Preserve all filters except those explicitly changed. @param {Record<string, string>} change */
 	function href(change) {
-		const next = { q: data.filters.q, category: data.filters.category, sort: data.filters.sort, verified: data.filters.verifiedOnly ? '1' : '', ...change };
+		const next = { q: data.filters.q, category: data.filters.category, sort: data.filters.sort, verified: data.filters.verifiedOnly ? '1' : '', page: '1', ...change };
 		const params = new URLSearchParams();
 		if (next.q) params.set('q', next.q);
 		if (next.category) params.set('category', next.category);
 		if (next.sort && next.sort !== 'new') params.set('sort', next.sort);
 		if (next.verified) params.set('verified', '1');
+		if (next.page && next.page !== '1') params.set('page', next.page);
 		return params.toString() ? `/?${params.toString()}` : '/';
 	}
 
@@ -36,6 +37,9 @@
 		window.addEventListener('storage', refreshHistory);
 		return () => window.removeEventListener('storage', refreshHistory);
 	});
+
+	// Compute the listing return URL once per navigation, not once per card.
+	const listingsReturnTo = $derived(page.url.pathname + page.url.search);
 
 	const hasFilters = $derived(Boolean(data.filters.category || data.filters.verifiedOnly || data.filters.q));
 const activeCategory = $derived(
@@ -96,7 +100,7 @@ const activeCategory = $derived(
 				{#each recentItems as item (item.id)}
 					<a class="continue-card" href="/listing/{item.id}" aria-label="View {item.title}">
 						{#if item.image}
-							<img src="/photos/{item.image}" alt="" loading="lazy" />
+							<img src="/photos/{item.image}" alt="" loading="lazy" decoding="async" width="400" height="300" />
 						{:else}
 							<div class="continue-no-photo"><Icon name="box" size={28} /><span>No photo</span></div>
 						{/if}
@@ -130,7 +134,7 @@ const activeCategory = $derived(
 
 	<section id="discover" class="listings-section" aria-labelledby="listings-title">
 		<div class="listings-toolbar">
-			<div class="listings-heading"><p class="eyebrow">02 / THE MARKETPLACE</p><h2 id="listings-title">{#if data.filters.q}Matching listings{:else if activeCategory}{activeCategory} finds{:else}Fresh finds on campus{/if}<span class="heading-period">.</span></h2><p class="listing-count">{data.listings.length} {data.listings.length === 1 ? 'item' : 'items'} shown · Explore what's available</p></div>
+			<div class="listings-heading"><p class="eyebrow">02 / THE MARKETPLACE</p><h2 id="listings-title">{#if data.filters.q}Matching listings{:else if activeCategory}{activeCategory} finds{:else}Fresh finds on campus{/if}<span class="heading-period">.</span></h2><p class="listing-count">{data.listings.length} shown · {data.pagination.total} total listings</p></div>
 			<div class="controls">
 				<label class="verified-filter"><span class="verified-icon"><Icon name="verified" size={17}/></span><span>Verified sellers</span><input class="switch" type="checkbox" role="switch" checked={data.filters.verifiedOnly} onchange={(e) => navigate(href({ verified: e.currentTarget.checked ? '1' : '' }))} /></label>
 				<label class="sort"><span class="sr-only">Sort listings by</span><select value={data.filters.sort} onchange={(e) => navigate(href({ sort: e.currentTarget.value }))}><option value="new">Newest first</option><option value="price_asc">Price: low to high</option><option value="price_desc">Price: high to low</option></select></label>
@@ -138,9 +142,20 @@ const activeCategory = $derived(
 		</div>
 		{#if hasFilters}<div class="active-filters" aria-label="Active filters">{#if data.filters.q}<a href={href({ q: '' })} data-sveltekit-reset="false">Search: {data.filters.q} <span aria-hidden="true">×</span></a>{/if}{#if activeCategory}<a href={href({ category: '' })} data-sveltekit-reset="false">{activeCategory} <span aria-hidden="true">×</span></a>{/if}{#if data.filters.verifiedOnly}<a href={href({ verified: '' })} data-sveltekit-reset="false">Verified only <span aria-hidden="true">×</span></a>{/if}<a class="clear-all" href="/" data-sveltekit-reset="false">Clear all</a></div>{/if}
 		{#if data.listings.length}
-			<div class="grid2 listing-grid">{#each data.listings as l (l.id)}<ListingCard {l} signedIn={data.signedIn} returnTo={page.url.pathname + page.url.search} />{/each}</div>
+			<div class="grid2 listing-grid">{#each data.listings as l (l.id)}<ListingCard {l} signedIn={data.signedIn} returnTo={listingsReturnTo} />{/each}</div>
 		{:else}
 			<div class="empty-state"><div class="empty-symbol"><Icon name="search" size={32}/></div><h3>{#if hasFilters}No listings match just yet{:else}The marketplace is waiting for its first listing{/if}</h3><p>{#if hasFilters}Try another search, choose a different category, or remove a filter.{:else}Have something another student might need? Be the first to list it.{/if}</p><a class="empty-link" href={hasFilters ? '/' : '/sell'}>{hasFilters ? 'Browse all items' : 'List an item'} <span aria-hidden="true">↗</span></a></div>
+		{/if}
+		{#if data.pagination.hasPrevious || data.pagination.hasNext}
+			<nav class="listing-pagination" aria-label="Marketplace pages">
+				{#if data.pagination.hasPrevious}
+					<a href={href({ page: String(data.pagination.page - 1) }) + '#discover'} rel="prev">← Previous</a>
+				{:else}<span class="pagination-disabled">← Previous</span>{/if}
+				<span class="pagination-current" aria-current="page">Page {data.pagination.page}</span>
+				{#if data.pagination.hasNext}
+					<a href={href({ page: String(data.pagination.page + 1) }) + '#discover'} rel="next">Next →</a>
+				{:else}<span class="pagination-disabled">Next →</span>{/if}
+			</nav>
 		{/if}
 	</section>
 
@@ -506,4 +521,13 @@ const activeCategory = $derived(
     .hero-cta,.hero-secondary,.cat,.home-page :global(.lcard) { transition: none; transform: none; }
   }
 
+
+  /* Pagination controls */
+  .listing-pagination { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+  .listing-pagination a, .listing-pagination span { min-height: 42px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--border-color, #d5d9e1); border-radius: 13px; padding: 10px 15px; color: var(--text-primary, inherit); background: var(--bg-card, #fff); font-size: 13px; font-weight: 700; text-decoration: none; }
+  .listing-pagination a:hover { border-color: #d33c67; }
+  .listing-pagination .pagination-disabled { opacity: .45; }
+  .listing-pagination .pagination-current { border-color: #d33c67; color: #d33c67; }
+  :global(html[data-theme='dark']) .listing-pagination a, :global(html[data-theme='dark']) .listing-pagination span { background: #202a3b; border-color: #43506a; color: #f2f5fc; }
+  :global(html[data-theme='dark']) .listing-pagination .pagination-current { border-color: #ee7496; color: #ff9eb8; }
 </style>

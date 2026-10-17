@@ -31,7 +31,7 @@
 <div class="saved-card-wrap">
 	<a class="lcard" href="/listing/{l.id}">
 		<div class="pic">
-			{#if l.cover}<img src="/photos/{l.cover}" alt={l.title} loading="lazy" />{:else}<span class="no-photo"><Icon name="box" size={32} />Photo coming soon</span>{/if}
+			{#if l.cover}<img src="/photos/{l.cover}" alt={l.title} loading="lazy" decoding="async" width="400" height="300" />{:else}<span class="no-photo"><Icon name="box" size={32} />Photo coming soon</span>{/if}
 			<span class="condition-pill">{CONDITION_LABELS[l.condition] ?? l.condition}</span>
 		</div>
 		<div class="meta">

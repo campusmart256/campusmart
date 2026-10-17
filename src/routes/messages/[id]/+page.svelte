@@ -1,7 +1,6 @@
 <script>
 	import { invalidateAll } from '$app/navigation';
 	import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_KEY } from '$app/env/public';
-	import { createBrowserClient } from '@supabase/ssr';
 	import { onMount, tick } from 'svelte';
 
 	/** @typedef {import('./$types').PageData['messages'][number]} ChatMessage */
@@ -190,33 +189,57 @@ longPressTimers.set('active', setTimeout(() => {
 		};
 		document.addEventListener('visibilitychange', refreshOnVisible);
 
-		const supabase = createBrowserClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_KEY);
-		const channel = supabase
-			.channel(`campusmart-conversation-${data.conversation.id}`)
-			.on(
-				'postgres_changes',
-				{ event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${data.conversation.id}` },
-				async () => {
-					await invalidateAll();
-					await scrollToBottom();
-				}
-			)
-			.subscribe((status) => {
-				if (status === 'SUBSCRIBED') {
-					realtimeStatus = 'live';
-					realtimeText = 'Live updates are on.';
-				} else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+		// Load the Realtime dependency only in the browser, after initial rendering.
+		// The messaging page remains usable even if live updates cannot connect.
+		let disposed = false;
+		/** @type {import('@supabase/supabase-js').SupabaseClient | null} */
+		let supabase = null;
+		/** @type {import('@supabase/supabase-js').RealtimeChannel | null} */
+		let channel = null;
+
+		async function connectRealtime() {
+			try {
+				const { createBrowserClient } = await import('@supabase/ssr');
+				if (disposed) return;
+				supabase = createBrowserClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_KEY);
+				channel = supabase
+					.channel(`campusmart-conversation-${data.conversation.id}`)
+					.on(
+						'postgres_changes',
+						{ event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${data.conversation.id}` },
+						async () => {
+							if (disposed) return;
+							await invalidateAll();
+							if (!disposed) await scrollToBottom();
+						}
+					)
+					.subscribe((status) => {
+						if (disposed) return;
+						if (status === 'SUBSCRIBED') {
+							realtimeStatus = 'live';
+							realtimeText = 'Live updates are on.';
+						} else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+							realtimeStatus = 'fallback';
+							realtimeText = 'Live updates are unavailable. New messages still appear after refresh.';
+						} else {
+							realtimeStatus = 'starting';
+							realtimeText = 'Connecting live updates...';
+						}
+					});
+			} catch (error) {
+				if (!disposed) {
 					realtimeStatus = 'fallback';
 					realtimeText = 'Live updates are unavailable. New messages still appear after refresh.';
-				} else {
-					realtimeStatus = 'starting';
-					realtimeText = 'Connecting live updates...';
+						console.warn('CampusMart Realtime connection unavailable', error);
 				}
-			});
+			}
+		}
+		void connectRealtime();
 
 		return () => {
+			disposed = true;
 			document.removeEventListener('visibilitychange', refreshOnVisible);
-			supabase.removeChannel(channel);
+			if (supabase && channel) void supabase.removeChannel(channel);
 		};
 	});
 </script>
@@ -512,4 +535,77 @@ longPressTimers.set('active', setTimeout(() => {
 	@media (min-width: 900px) { .chat-page { max-width: 980px; } .messages { padding: 24px; } .bubble-wrap { max-width: 68%; } .composer { padding: 14px; } }
 	@media (max-width: 520px) { .chat-page { padding-top: 10px; padding-bottom: 95px; } .chat-head { padding: 20px 17px; border-radius: 18px; } .chat-head h1 { font-size: 25px; } .chat-overline { font-size: 9px; } .messages { padding: 12px 9px; border-radius: 16px; max-height: 54vh; } .bubble-wrap { max-width: 95%; gap: 5px; } .bubble { padding: 10px 12px; } .composer { padding: 9px; border-radius: 15px; } .composer-row { gap: 7px; } .send-btn { width: 46px; height: 46px; } }
 	@media (prefers-reduced-motion: reduce) { .send-btn, .chat-head .icon-btn { transition: none; } }
+
+	/* Phase 65: dark-mode surfaces for chat controls and safety dialogs.
+	   Scoped to the selected theme, preserving the light design and interactions. */
+	:global(html[data-theme='dark']) .safety-popover,
+	:global(html[data-theme='dark']) .contact-dialog {
+		background: #1d2330 !important;
+		border-color: rgba(220,232,248,.18) !important;
+		color: #f4f6fb;
+	}
+	:global(html[data-theme='dark']) .safety-popover :is(h2, strong, summary),
+	:global(html[data-theme='dark']) .contact-dialog :is(h2, strong) { color: #f4f6fb; }
+	:global(html[data-theme='dark']) .safety-popover .muted,
+	:global(html[data-theme='dark']) .contact-dialog .muted { color: #bdc7d8; }
+	:global(html[data-theme='dark']) .whatsapp-box {
+		background: #182f31;
+		border-color: rgba(105,221,202,.26);
+		color: #e8faf6;
+	}
+	:global(html[data-theme='dark']) .whatsapp-box strong { color: #d1fff3; }
+	:global(html[data-theme='dark']) .whatsapp-box .muted { color: #bcdfd7; }
+	:global(html[data-theme='dark']) .contact-number {
+		background: #121a28;
+		border-color: rgba(220,232,248,.20);
+		color: #f4f6fb;
+	}
+	:global(html[data-theme='dark']) .btn.secondary,
+	:global(html[data-theme='dark']) .menu-action,
+	:global(html[data-theme='dark']) .message-menu {
+		background: #282f3d;
+		border-color: rgba(220,232,248,.20);
+		color: #f4f6fb;
+	}
+	:global(html[data-theme='dark']) .btn.secondary.danger { color: #ff93ae; }
+	:global(html[data-theme='dark']) .composer {
+		background: #1d2330 !important;
+		border-color: rgba(220,232,248,.18);
+		color: #f4f6fb;
+	}
+	:global(html[data-theme='dark']) .composer textarea {
+		background: #141b29 !important;
+		border-color: rgba(220,232,248,.18) !important;
+		color: #f4f6fb;
+		color-scheme: dark;
+	}
+	:global(html[data-theme='dark']) .composer textarea::placeholder { color: #aab7cb; }
+	:global(html[data-theme='dark']) .reply-preview {
+		background: #2c2634;
+		border-color: var(--red);
+	}
+	:global(html[data-theme='dark']) .reply-preview button,
+	:global(html[data-theme='dark']) .quick-reply,
+	:global(html[data-theme='dark']) .icon-btn {
+		background: #30394a;
+		border-color: rgba(220,232,248,.18);
+		color: #e6ebf4;
+	}
+	:global(html[data-theme='dark']) .messages {
+		background: #171d29;
+		border-color: rgba(220,232,248,.16);
+	}
+	:global(html[data-theme='dark']) .bubble-wrap:not(.mine) .bubble {
+		background: #2b3445;
+		border-color: rgba(220,232,248,.15);
+		color: #edf2fa;
+	}
+	:global(html[data-theme='dark']) .bubble-wrap:not(.mine) .bubble small { color: #b4c0d1; }
+	:global(html[data-theme='dark']) .bubble-wrap:not(.mine) .quoted-message { background: rgba(255,255,255,.07); }
+	:global(html[data-theme='dark']) .chat-head .icon-btn { background: rgba(255,255,255,.12); color: #fff; }
+	@media (prefers-reduced-transparency: reduce) {
+		:global(html[data-theme='dark']) .safety-popover,
+		:global(html[data-theme='dark']) .contact-dialog,
+		:global(html[data-theme='dark']) .composer { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+	}
 </style>
