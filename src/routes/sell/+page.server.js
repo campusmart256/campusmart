@@ -102,14 +102,30 @@ export const actions = {
 			return fail(500, { values, errors: {}, message: 'We could not save your photos. Please try again.' });
 		}
 
-		// 4. Publish (or keep as a draft)
-		if (intent === 'draft') redirect(303, `/listing/${listingId}?notice=draft`);
 
-		const published = await locals.supabase.from('listings').update({ status: 'active' }).eq('id', listingId).select('status');
-		if (published.error || !published.data?.length) {
-			console.error('publish failed:', published.error?.code, published.error?.message);
-			redirect(303, `/listing/${listingId}?notice=${noticeFor(published.error?.message ?? '')}`);
-		}
-		redirect(303, `/listing/${listingId}?notice=${published.data[0].status === 'held' ? 'held' : 'published'}`);
-	}
-};
+// 4. Publish (or keep as a draft)
+if (intent === 'draft') redirect(303, `/listing/${listingId}?notice=draft`);
+
+// Publish through the secured database function.
+// The RPC checks ownership, serializes publication attempts,
+// and uses the existing listings_guard trigger for validation.
+const { data: publishedStatus, error: publishError } =
+    await locals.supabase.rpc('publish_listing', {
+        p_listing_id: listingId
+    });
+
+if (publishError || !publishedStatus) {
+    console.error('publish failed:', publishError?.code, publishError?.message);
+    redirect(
+        303,
+        `/listing/${listingId}?notice=${noticeFor(publishError?.message ?? '')}`
+    );
+}
+
+redirect(
+    303,
+    `/listing/${listingId}?notice=${publishedStatus === 'held' ? 'held' : 'published'}`
+);
+
+}
+}

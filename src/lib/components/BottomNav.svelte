@@ -1,4 +1,5 @@
 <script>
+	import { onMount } from 'svelte';
 	import Icon from './Icon.svelte';
 	/** @type {{ pathname: string, signedIn: boolean, unreadMessages?: number, savedPriceDropAlerts?: number, progress?: number }} */
 	let { pathname, signedIn, unreadMessages = 0, savedPriceDropAlerts = 0, progress = 0 } = $props();
@@ -10,9 +11,72 @@
 		{ label: 'Profile', href: signedIn ? '/account' : '/signin', icon: 'user' }
 	]);
 	const shrink = $derived(Math.max(0, Math.min(1, progress)));
+
+	// Hide on downward scrolling only in mobile browser tabs, not installed PWAs.
+	let hideInBrowser = $state(false);
+
+	onMount(() => {
+		const isInstalled = window.matchMedia('(display-mode: standalone)').matches ||
+			/** @type {Navigator & { standalone?: boolean }} */ (navigator).standalone === true;
+		if (isInstalled) return;
+
+		let previousY = Math.max(0, window.scrollY);
+		let accumulatedMovement = 0;
+
+		function onScroll() {
+			const currentY = Math.max(0, window.scrollY);
+			const delta = currentY - previousY;
+			previousY = currentY;
+
+			// Always show near the top, and ignore tiny scroll jitter.
+			if (currentY < 80) {
+				hideInBrowser = false;
+				accumulatedMovement = 0;
+				return;
+			}
+			if (Math.abs(delta) < 1) return;
+
+			// Accumulate movement in one direction, preventing flicker.
+			if (Math.sign(delta) !== Math.sign(accumulatedMovement)) {
+				accumulatedMovement = delta;
+			} else {
+				accumulatedMovement += delta;
+			}
+			accumulatedMovement = Math.max(-40, Math.min(40, accumulatedMovement));
+
+			if (accumulatedMovement > 14) {
+				hideInBrowser = true;
+				accumulatedMovement = 0;
+			} else if (accumulatedMovement < -10) {
+				hideInBrowser = false;
+				accumulatedMovement = 0;
+			}
+		}
+
+		const showOnFocus = () => {
+			if (document.visibilityState === 'visible') {
+				previousY = Math.max(0, window.scrollY);
+				hideInBrowser = false;
+				accumulatedMovement = 0;
+			}
+		};
+
+		window.addEventListener('scroll', onScroll, { passive: true });
+		document.addEventListener('visibilitychange', showOnFocus);
+		return () => {
+			window.removeEventListener('scroll', onScroll);
+			document.removeEventListener('visibilitychange', showOnFocus);
+		};
+	});
 </script>
 
-<nav class="bottom" style={`--shrink: ${shrink}`} aria-label="Main">
+<nav
+    class="bottom"
+    class:browser-hidden={hideInBrowser}
+    style={`--shrink: ${shrink}`}
+    aria-label="Main"
+    data-sveltekit-preload-data="tap"
+>
 	{#each items as item (item.label)}
 		{#if item.sell}
 			<a class="sellfab" href={item.href} aria-label="Sell an item" aria-current={pathname === item.href ? 'page' : undefined}><Icon name="plus" size={26} /></a>
@@ -45,7 +109,13 @@
 		backdrop-filter: blur(24px) saturate(180%);
 		box-shadow: 0 12px 32px rgba(16, 25, 46, calc(.14 - .045 * var(--shrink, 0))), 0 2px 9px rgba(16, 25, 46, .05), inset 0 1px 0 rgba(255, 255, 255, .75);
 		isolation: isolate;
-		transition: left .105s ease-out, right .105s ease-out, min-height .105s ease-out, padding .105s ease-out, border-radius .105s ease-out, box-shadow .105s ease-out, background-color .105s ease-out;
+		transition: transform .28s cubic-bezier(.2,.8,.2,1), opacity .25s ease, left .105s ease-out, right .105s ease-out, min-height .105s ease-out, padding .105s ease-out, border-radius .105s ease-out, box-shadow .105s ease-out, background-color .105s ease-out;
+	}
+	/* Browser-only scroll behavior: keep the nav unchanged in standalone mode. */
+	.bottom.browser-hidden {
+		transform: translateY(calc(100% + 45px + env(safe-area-inset-bottom, 0px)));
+		opacity: 0;
+		pointer-events: none;
 	}
 	a {
 		flex: 1 1 0;

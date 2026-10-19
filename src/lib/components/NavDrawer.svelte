@@ -2,6 +2,7 @@
 	import { onMount, tick } from 'svelte';
 	import Logo from './Logo.svelte';
 	import Icon from './Icon.svelte';
+	import { handleLogout } from '#lib/client/logout.js';
 
 	/** @type {{ user: any, isStaff: boolean, staffRole?: string | null, pathname: string, unreadMessages?: number, savedPriceDropAlerts?: number, pendingVerificationRequests?: number, pendingReports?: number, onclose: () => void }} */
 	let { user, isStaff, staffRole = null, pathname, unreadMessages = 0, savedPriceDropAlerts = 0, pendingVerificationRequests = 0, pendingReports = 0, onclose } = $props();
@@ -91,7 +92,7 @@
 					{#if pendingVerificationRequests > 0}<span class="badge" aria-label={`${pendingVerificationRequests} pending verification requests`}>{pendingVerificationRequests > 99 ? '99+' : pendingVerificationRequests}</span>{/if}
 				</a>
 			{/if}
-			<form method="POST" action="/signout"><button class="item btnrow" type="submit"><Icon name="logout" size={20} /><span class="label">Sign out</span></button></form>
+			<form method="POST" action="/signout" onsubmit={handleLogout}><button class="item btnrow" type="submit"><Icon name="logout" size={20} /><span class="label">Sign out</span></button></form>
 		{:else}
 			<a class="item" href="/signin" aria-current={pathname === '/signin' || pathname === '/signup' ? 'page' : undefined}><Icon name="login" size={20} /><span class="label">Sign in / Sign up</span></a>
 		{/if}

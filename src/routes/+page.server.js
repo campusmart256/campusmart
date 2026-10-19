@@ -8,6 +8,7 @@ const SELECT =
 
 /** The newest active listings, visible to everyone, with search and simple filters from the address. */
 export const load = async ({ locals, url }) => {
+	const homeStart = performance.now();
 	// Category visibility is public, so load it alongside authentication.
 	const userPromise = locals.getUser();
 	const categoriesPromise = locals.supabase
@@ -24,7 +25,35 @@ export const load = async ({ locals, url }) => {
 	const rawPage = url.searchParams.get('page') ?? '1';
 	const requestedPage = /^\d{1,4}$/.test(rawPage) ? Math.min(MAX_PAGE, Math.max(1, Number(rawPage))) : 1;
 
-	const [user, categoriesResult] = await Promise.all([userPromise, categoriesPromise]);
+	const stage1Start = performance.now();
+// Start loading the default marketplace feed early.
+// Only safe when no category lookup or text search is required.
+const canPreloadFeed =
+    !slug &&
+    words.length === 0 &&
+    !verifiedOnly &&
+    sort === 'new' &&
+    requestedPage === 1;
+
+const earlyFeedPromise = canPreloadFeed
+    ? (async () => {
+        return await locals.supabase
+            .from('listings')
+            .select(SELECT, { count: 'exact' })
+            .eq('status', 'active')
+            .order('published_at', { ascending: false })
+            .order('id')
+            .range(0, PAGE_SIZE - 1);
+    })()
+    : null;
+const [user, categoriesResult] = await Promise.all([
+    userPromise,
+    categoriesPromise
+]);
+
+console.info('CAMPUSMART_HOME_STAGE1_MS', {
+    durationMs: Math.round(performance.now() - stage1Start)
+});
 	if (categoriesResult.error) console.error('categories load failed:', categoriesResult.error.code, categoriesResult.error.message);
 	const categories = categoriesResult.data ?? [];
 	const selected = categories.find((c) => c.slug === slug) ?? null;
@@ -48,7 +77,9 @@ export const load = async ({ locals, url }) => {
 		else query = query.order('published_at', { ascending: false }).order('id');
 		// Always return a valid page if a listing disappears while navigating.
 		const start = (currentPage - 1) * PAGE_SIZE;
-		let result = await query.range(start, start + PAGE_SIZE - 1);
+		let result = earlyFeedPromise
+    ? await earlyFeedPromise
+    : await query.range(start, start + PAGE_SIZE - 1);
 		if (result.error) console.error('feed load failed:', result.error.code, result.error.message);
 		total = result.count ?? 0;
 		const lastPage = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -112,13 +143,24 @@ export const load = async ({ locals, url }) => {
 	});
 
     if (user && listings.length) {
+		const savedStart = performance.now();
         const { data: savedRows, error: savedError } = await locals.supabase
             .from('saved_listings').select('listing_id').eq('user_id', user.id)
             .in('listing_id', listings.map((l) => l.id));
         if (savedError) console.error('saved items (home) failed:', savedError.code, savedError.message);
+		console.info('CAMPUSMART_HOME_SAVED_MS', {
+    durationMs: Math.round(performance.now() - savedStart)
+});
         const savedIds = new Set((savedRows ?? []).map((r) => r.listing_id));
         listings = listings.map((l) => ({ ...l, saved: savedIds.has(l.id) }));
     }
 
+	console.info('CAMPUSMART_HOME_TOTAL_MS', {
+    durationMs: Math.round(performance.now() - homeStart),
+    listingCount: listings.length,
+    signedIn: !!user,
+    hasSearch: words.length > 0,
+    hasCategory: !!selected
+});
 	return { listings, user, signedIn: !!user, categories, filters: { category: selected?.slug ?? '', sort, verifiedOnly, q }, pagination: { page: currentPage, pageSize: PAGE_SIZE, total, hasPrevious: currentPage > 1, hasNext, searchLimited: false } };
 };

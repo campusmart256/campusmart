@@ -12,8 +12,11 @@
 		{
 			// The photo storage. "bucket_name" must match the name you gave the bucket in Cloudflare.
 			"binding": "PHOTOS",
-			"bucket_name": "campusmart-photos"
+			"bucket_name": "campusmart"
 		}
 	],
-	"observability": { "enabled": true }
+	"vars": {
+    "VAPID_SUBJECT": "mailto:campusmart256@gmail.com"
+},
+"observability": { "enabled": true }
 }

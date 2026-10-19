@@ -1,0 +1,21 @@
+
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "campusmart-push",
+  "main": "worker.js",
+  "compatibility_date": "2026-08-01",
+  "compatibility_flags": ["nodejs_compat"],
+"vars": {
+  "SUPABASE_URL": "https://oovlhwjoxzzicnmoxcwj.supabase.co",
+  "VAPID_SUBJECT": "mailto:campusmart256@gmail.com",
+  "VAPID_PUBLIC_KEY": "BKg7hmc4zeT877XP_5w12sKr9TL9xBxDXJTguReXtHVr5wmoG9F2DSiimxPSqXmNKtjtpv1LDNc3EeR_-e-ohZc",
+  "ENABLE_PUSH_DELIVERY": "true",
+  "PUSH_TEST_MODE": "false"
+},
+  "triggers": {
+    "crons": ["* * * * *"]
+  },
+  "observability": {
+    "enabled": true
+  }
+}

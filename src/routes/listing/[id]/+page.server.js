@@ -16,7 +16,7 @@ export const load = async ({ params, locals, url }) => {
 	const { data, error: dbError } = await locals.supabase
 		.from('listings')
 		.select(
-			'id, title, description, price_ugx, condition, is_negotiable, status, quantity_available, published_at, seller_id, sold_to_user_id, category_id, categories(name), meetup_spots(name), listing_images(storage_path, position), profiles!listings_seller_id_fkey(display_name, verification_status, avatar_path)'
+			'id, title, description, price_ugx, condition, is_negotiable, status, quantity_available, published_at, seller_id, sold_to_user_id, category_id, categories(name), meetup_spots(name), listing_images(storage_path, position), profiles!listings_seller_id_fkey(display_name, verification_status, avatar_path, campuses(name))'
 		)
 		.eq('id', params.id)
 		.maybeSingle();

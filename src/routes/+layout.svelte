@@ -2,7 +2,7 @@
 	import '../app.css';
 	import favicon from '#lib/assets/favicon.svg';
 	import { page } from '$app/state';
-	import { afterNavigate } from '$app/navigation';
+	import { afterNavigate, beforeNavigate, goto } from '$app/navigation';
 	import { tick, onMount } from 'svelte';
 	import Logo from '#lib/components/Logo.svelte';
 	import Icon from '#lib/components/Icon.svelte';
@@ -55,6 +55,124 @@
 		return () => { media.removeEventListener('change', onSystemChange); window.removeEventListener('storage', onStorage); };
 	});
 
+	// Handle navigation requests from push notification clicks.
+onMount(() => {
+    if (!('serviceWorker' in navigator)) return;
+
+    /** @param {MessageEvent} event */
+    const onServiceWorkerMessage = (event) => {
+        const message = event.data;
+
+        if (message?.type !== 'CAMPUSMART_OPEN_CHAT') return;
+
+        const conversationId = message.conversationId;
+
+        if (
+            typeof conversationId !== 'string' ||
+            !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(conversationId)
+        ) {
+            return;
+        }
+
+        void goto(`/messages/${conversationId}`);
+    };
+
+    navigator.serviceWorker.addEventListener(
+        'message',
+        onServiceWorkerMessage
+    );
+
+    return () => {
+        navigator.serviceWorker.removeEventListener(
+            'message',
+            onServiceWorkerMessage
+        );
+    };
+});
+    // Phase 68.6: register the service worker for background Web Push.
+    onMount(() => {
+        if (!('serviceWorker' in navigator)) return;
+
+        const registerWorker = async () => {
+            try {
+                await navigator.serviceWorker.register('/service-worker.js', {
+                    scope: '/'
+                });
+            } catch (error) {
+                console.warn('CampusMart service worker registration failed:', error);
+            }
+        };
+
+        void registerWorker();
+    });
+
+	// Phase 67.3: lightweight browser notifications while CampusMart is open.
+	// This deliberately does not promise background Web Push when all tabs are closed.
+	onMount(() => {
+		/** @type {Set<string> | null} */
+		let knownUnread = null;
+		let polling = false;
+		let stopped = false;
+		let lastUserId = '';
+
+		async function checkMessages() {
+			if (polling || stopped) return;
+			const userId = data.user?.id ?? '';
+			if (!userId) { knownUnread = null; lastUserId = ''; return; }
+			if (lastUserId !== userId) { knownUnread = null; lastUserId = userId; }
+			polling = true;
+			try {
+				const response = await fetch('/api/notifications/unread', { cache: 'no-store' });
+				if (!response.ok) return;
+				const result = await response.json();
+				if (!result.enabled || !('Notification' in window) || Notification.permission !== 'granted') {
+					knownUnread = null;
+					return;
+				}
+				const messages = /** @type {Array<{id:string,conversation_id:string}>} */ (result.messages ?? []);
+				const nextUnread = new Set(messages.map((message) => message.id));
+				if (knownUnread !== null) {
+					// The oldest existing unread messages are not new notifications.
+					for (const message of messages) {
+						if (knownUnread.has(message.id)) continue;
+						const notification = new Notification('New CampusMart message', {
+							body: 'You have a new unread message.',
+							tag: `campusmart-message-${message.id}`
+						});
+						notification.onclick = () => {
+							window.focus();
+							window.location.assign(`/messages/${encodeURIComponent(message.conversation_id)}`);
+							notification.close();
+						};
+						}
+				}
+				knownUnread = nextUnread;
+			} catch (err) {
+				console.warn('Message notification check unavailable:', err);
+			} finally {
+				polling = false;
+			}
+		}
+
+		void checkMessages();
+		const interval = window.setInterval(() => { void checkMessages(); }, 20000);
+		const onPreferenceSaved = () => { knownUnread = null; void checkMessages(); };
+		window.addEventListener('campusmart:notification-settings', onPreferenceSaved);
+		return () => {
+			stopped = true;
+			window.clearInterval(interval);
+			window.removeEventListener('campusmart:notification-settings', onPreferenceSaved);
+		};
+	});
+
+	// Global navigation progress indicator.
+let navigationLoading = $state(false);
+
+beforeNavigate((navigation) => {
+    if (navigation.to && navigation.willUnload === false) {
+        navigationLoading = true;
+    }
+});
 	let menuOpen = $state(false);
 	let scrollY = $state(0);
 	// Scroll-linked progress: 0 = expanded/visible, 1 = hidden header and compact nav.
@@ -88,10 +206,11 @@
 		menuBtn?.focus();
 	}
 	afterNavigate(() => {
-		menuOpen = false;
-		navigationProgress = 0;
-		if (typeof window !== 'undefined') previousScrollY = window.scrollY;
-	});
+    navigationLoading = false;
+    menuOpen = false;
+    navigationProgress = 0;
+    if (typeof window !== 'undefined') previousScrollY = window.scrollY;
+});
 </script>
 
 <svelte:head>
@@ -103,6 +222,9 @@
 
 <DesktopSidebar user={data.user} profile={data.profile} isStaff={data.isStaff} staffRole={data.staffRole} pathname={page.url.pathname} unreadMessages={data.unreadMessages ?? 0} pendingVerificationRequests={data.pendingVerificationRequests ?? 0} savedPriceDropAlerts={data.savedPriceDropAlerts ?? 0} />
 
+{#if navigationLoading}
+    <div class="navigation-loading" role="progressbar" aria-label="Loading page"></div>
+{/if}
 <div class="app-shell">
 <header class="top" class:scrolled={scrollY > 10} style={`--header-hide: ${menuOpen ? 0 : navigationProgress}`}>
 	<button class="menu" type="button" aria-label="Open menu" aria-haspopup="dialog" aria-expanded={menuOpen} aria-controls="site-menu" bind:this={menuBtn} onclick={() => (menuOpen = true)}>
@@ -176,4 +298,37 @@
 	@media (min-width: 768px) { main { padding-bottom: 0; } }
 	@media (min-width: 900px) { .app-shell { margin-left: 280px; } .top { padding: 10px 28px; min-height: 66px; } .menu { display: none; } .sell { min-height: 42px; padding: 0 16px; } }
 	@media (min-width: 1280px) { .top { padding-left: 40px; padding-right: 40px; } }
+	.navigation-loading {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 35%;
+    height: 3px;
+    z-index: 9999;
+    background: #c8102e;
+    border-radius: 0 999px 999px 0;
+    pointer-events: none;
+    animation: navigation-progress 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes navigation-progress {
+    from {
+        transform: translateX(-100%);
+    }
+
+    to {
+        transform: translateX(285%);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .navigation-loading {
+        animation: none;
+        width: 100%;
+    }
+}
+
+:global(html[data-theme='dark']) .navigation-loading {
+    background: #ff779a;
+}
 </style>

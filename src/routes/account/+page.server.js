@@ -197,7 +197,8 @@ if (!('document' in documentRead)) {
 		const phone = normalizePhone(form.get('whatsappNumber'));
 		const whatsappEnabled = form.get('whatsappEnabled') === 'on';
 		const notifyEmail = form.get('notifyEmail') === 'on';
-		const values = { whatsappNumber: String(form.get('whatsappNumber') ?? '').trim(), whatsappEnabled, notifyEmail };
+		const notifyPush = form.get('notifyPush') === 'on';
+		const values = { whatsappNumber: String(form.get('whatsappNumber') ?? '').trim(), whatsappEnabled, notifyEmail, notifyPush };
 
 		if (phone.error) return fail(400, { section: 'contact', values, errors: { whatsappNumber: phone.error } });
 		if (whatsappEnabled && !phone.value) {
@@ -207,7 +208,7 @@ if (!('document' in documentRead)) {
 		// Save the number and alert choice first, then the public on/off switch.
 		const settings = await locals.supabase
 			.from('private_settings')
-			.update({ whatsapp_number: phone.value, notify_email: notifyEmail })
+			.update({ whatsapp_number: phone.value, notify_email: notifyEmail, notify_push: notifyPush })
 			.eq('user_id', user.id)
 			.select('user_id');
 		if (settings.error || !settings.data || settings.data.length !== 1) {

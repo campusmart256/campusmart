@@ -7,7 +7,7 @@
 	let unreadOnly = $state(false);
 	const conversations = $derived(data.conversations ?? []);
 	const unreadTotal = $derived(Object.values(data.unreadByConversation ?? {}).reduce((sum, count) => sum + Number(count || 0), 0));
-	const filteredConversations = $derived((conversations ?? []).filter((c) => {
+	const filteredConversations = $derived((conversations ?? []).filter(/** @param {{ id: string }} c */ (c) => {
 		if (unreadOnly && (data.unreadByConversation?.[c.id] ?? 0) === 0) return false;
 		const person = otherPerson(c);
 		const text = [person?.display_name, listingInfo(c)?.title, data.latestByConversation?.[c.id]?.body].join(' ').toLowerCase();

@@ -1,5 +1,10 @@
 <script>
 	import { enhance } from '$app/forms';
+	import {
+    subscribeDevice,
+    getDeviceSubscription,
+    unsubscribeDevice
+} from '#lib/client/push.js';
 	import { invalidateAll } from '$app/navigation';
 	import { compressAvatar } from '#lib/client/compress.js';
 	import Avatar from '#lib/components/Avatar.svelte';
@@ -40,6 +45,70 @@
 	const numberValue = $derived(form?.section === 'contact' && form?.values ? form.values.whatsappNumber : data.settings?.whatsapp_number ?? '');
 	const waOn = $derived(form?.section === 'contact' && form?.values ? form.values.whatsappEnabled : !!data.account?.whatsapp_enabled);
 	const emailOn = $derived(form?.section === 'contact' && form?.values ? form.values.notifyEmail : data.settings?.notify_email ?? true);
+	let pushOn = $state(false);
+	let pushProblem = $state('');
+	$effect(() => {
+		pushOn = form?.section === 'contact' && form?.values
+			? !!form.values.notifyPush
+			: !!data.settings?.notify_push;
+	});
+
+/** @param {Event} event */
+async function changePushPreference(event) {
+    const checked = /** @type {HTMLInputElement} */ (event.currentTarget).checked;
+    pushProblem = '';
+
+    if (checked) {
+        try {
+            const subscription = await subscribeDevice();
+
+            const response = await fetch('/api/notifications/subscription', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify(subscription)
+            });
+
+            if (!response.ok) {
+                throw new Error('Could not save this device subscription.');
+            }
+
+            pushOn = true;
+        } catch (error) {
+            pushOn = false;
+            pushProblem = error instanceof Error
+                ? error.message
+                : 'Could not enable background notifications.';
+        }
+
+        return;
+    }
+
+    try {
+        const subscription = await getDeviceSubscription();
+
+        if (subscription?.endpoint) {
+            const response = await fetch('/api/notifications/subscription', {
+                method: 'DELETE',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ endpoint: subscription.endpoint })
+            });
+
+            if (!response.ok) {
+                throw new Error('Could not remove this device subscription.');
+            }
+
+            await unsubscribeDevice();
+        }
+
+        pushOn = false;
+    } catch (error) {
+        pushOn = true;
+        pushProblem = error instanceof Error
+            ? error.message
+            : 'Could not disable background notifications.';
+    }
+}
+
 	const verificationStatus = $derived(data.account?.verification_status ?? 'unverified');
 	const verificationLocked = $derived(verificationStatus === 'verified' || verificationStatus === 'pending');
 	const verificationFullName = $derived(form?.section === 'verification' && form?.values ? form.values.fullName : '');
@@ -58,6 +127,7 @@
 			return async ({ update }) => {
 				await update({ reset: false });
 				await invalidateAll();
+				if (name === 'contact') window.dispatchEvent(new Event('campusmart:notification-settings'));
 				busy = '';
 			};
 		};
@@ -70,7 +140,7 @@
 	<header class="account-heading">
 		<p class="account-eyebrow"><span class="account-eyebrow-dot"></span> CAMPUSMART / PERSONAL SPACE</p>
 		<h1>Make it <span>yours.</span></h1>
-		<p class="account-intro">Your profile, preferences and student verification — all in one place.</p>
+		<p class="account-intro">Your profile, preferences and student verification â€” all in one place.</p>
 	</header>
 
 	{#if data.passwordChanged}<div class="notice tip" role="status">Your password was changed.</div>{/if}
@@ -93,16 +163,16 @@
 					{:else}
 						<span class="badge">{labels[data.account.verification_status] ?? data.account.verification_status}</span>
 					{/if}
-					<a href="#student-verification">Verification settings <span aria-hidden="true">↗</span></a>
+					<a href="#student-verification">Verification settings <span aria-hidden="true">â†—</span></a>
 				</div>
 			</div>
 		</div>
 
 		<nav class="account-shortcuts" aria-label="Account settings sections">
-			<a href="#profile-picture"><span class="shortcut-icon" aria-hidden="true">◉</span><span><strong>Profile picture</strong><small>How you appear</small></span><span class="shortcut-arrow" aria-hidden="true">↗</span></a>
-			<a href="#display-name"><span class="shortcut-icon" aria-hidden="true">Aa</span><span><strong>Display name</strong><small>Your public name</small></span><span class="shortcut-arrow" aria-hidden="true">↗</span></a>
-			<a href="#contact-alerts"><span class="shortcut-icon" aria-hidden="true">✉</span><span><strong>Contact & alerts</strong><small>Stay connected</small></span><span class="shortcut-arrow" aria-hidden="true">↗</span></a>
-			<a href="#student-verification"><span class="shortcut-icon" aria-hidden="true">✓</span><span><strong>Verification</strong><small>Build buyer trust</small></span><span class="shortcut-arrow" aria-hidden="true">↗</span></a>
+			<a href="#profile-picture"><span class="shortcut-icon" aria-hidden="true">â—‰</span><span><strong>Profile picture</strong><small>How you appear</small></span><span class="shortcut-arrow" aria-hidden="true">â†—</span></a>
+			<a href="#display-name"><span class="shortcut-icon" aria-hidden="true">Aa</span><span><strong>Display name</strong><small>Your public name</small></span><span class="shortcut-arrow" aria-hidden="true">â†—</span></a>
+			<a href="#contact-alerts"><span class="shortcut-icon" aria-hidden="true">âœ‰</span><span><strong>Contact & alerts</strong><small>Stay connected</small></span><span class="shortcut-arrow" aria-hidden="true">â†—</span></a>
+			<a href="#student-verification"><span class="shortcut-icon" aria-hidden="true">âœ“</span><span><strong>Verification</strong><small>Build buyer trust</small></span><span class="shortcut-arrow" aria-hidden="true">â†—</span></a>
 		</nav>
 
 		<h2 id="profile-picture" class="section-title">Profile picture</h2>
@@ -181,10 +251,12 @@
 				<span><span class="title">Email alerts</span><br /><span class="help">When someone messages you</span></span>
 				<input class="switch" type="checkbox" role="switch" name="notifyEmail" checked={emailOn} />
 			</label>
-			<div class="switch-row">
-				<span><span class="title">Browser notifications</span><br /><span class="help">Coming when chat launches</span></span>
-				<input class="switch" type="checkbox" role="switch" disabled aria-label="Browser notifications (coming soon)" />
-			</div>
+			<label class="switch-row">
+				<span><span class="title">Push notifications</span><br /><span class="help">Receive new message alerts even when CampusMart is closed.
+Save settings after changing.</span></span>
+				<input class="switch" type="checkbox" role="switch" name="notifyPush" bind:checked={pushOn} onchange={changePushPreference} />
+			</label>
+			{#if pushProblem}<div class="notice warn" role="status">{pushProblem}</div>{/if}
 			<button class="btn small" type="submit" disabled={busy === 'contact'}>{busy === 'contact' ? 'Saving...' : 'Save contact settings'}</button>
 		</form>
 

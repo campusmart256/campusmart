@@ -1421,3 +1421,41 @@ html[data-theme='dark'] .app-shell :is(
     color: var(--cm-67-muted) !important;
   }
 }
+
+/* Phase 67.1 — Homepage dark-mode readability.
+   Intentionally scoped to the homepage: light mode and branded hero unchanged. */
+html[data-theme='dark'] .app-shell .home-page .continue-heading h2 {
+  color: var(--text-primary, #f5f7fc);
+}
+html[data-theme='dark'] .app-shell .home-page .continue-heading > a {
+  color: #ff88ad;
+}
+html[data-theme='dark'] .app-shell .home-page .continue-card {
+  background: rgba(30,36,49,.90);
+  border-color: rgba(219,231,252,.17);
+  color: var(--text-primary, #f5f7fc);
+  box-shadow: 0 8px 24px rgba(0,0,0,.26);
+}
+html[data-theme='dark'] .app-shell .home-page .continue-info strong {
+  color: var(--text-primary, #f5f7fc);
+}
+html[data-theme='dark'] .app-shell .home-page .continue-info span {
+  color: #ff88ad;
+}
+html[data-theme='dark'] .app-shell .home-page .continue-note,
+html[data-theme='dark'] .app-shell .home-page .continue-no-photo {
+  color: var(--text-secondary, #d0d8e5);
+}
+html[data-theme='dark'] .app-shell .home-page .benefit div span {
+  color: var(--text-secondary, #d0d8e5);
+}
+html[data-theme='dark'] .app-shell .home-page .benefit strong {
+  color: var(--text-primary, #f5f7fc);
+}
+@media (prefers-reduced-transparency: reduce) {
+  html[data-theme='dark'] .app-shell .home-page .continue-card {
+    background: #1d222d;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}

@@ -2,6 +2,7 @@
 	import Logo from './Logo.svelte';
 	import Icon from './Icon.svelte';
 	import Avatar from './Avatar.svelte';
+	import { handleLogout } from '#lib/client/logout.js';
 
 	/** @type {{ user: any, profile?: any, isStaff: boolean, staffRole?: string | null, pathname: string, unreadMessages?: number, pendingVerificationRequests?: number, pendingReports?: number, savedPriceDropAlerts?: number, compact?: boolean }} */
 	let { user, profile, isStaff, staffRole = null, pathname, unreadMessages = 0, pendingVerificationRequests = 0, pendingReports = 0, savedPriceDropAlerts = 0, compact = false } = $props();
@@ -22,7 +23,12 @@ function active(href) {
 	}
 </script>
 
-<aside class:compact class="desktop-side" aria-label={compact ? 'Compact desktop navigation' : 'Desktop navigation'}>
+<aside
+    class:compact
+    class="desktop-side"
+    aria-label={compact ? 'Compact desktop navigation' : 'Desktop navigation'}
+    data-sveltekit-preload-data="hover"
+>
 	<div class="brand"><Logo height={28} /></div>
 
 	<div class="campus">
@@ -74,7 +80,7 @@ function active(href) {
 					{#if pendingVerificationRequests > 0}<span class="badge" aria-label={`${pendingVerificationRequests} pending verification requests`}>{pendingVerificationRequests > 99 ? '99+' : pendingVerificationRequests}</span>{/if}
 				</a>
 			{/if}
-			<form method="POST" action="/signout"><button class="item btnrow" type="submit" title="Sign out" aria-label="Sign out"><Icon name="logout" size={20} /><span class="label">Sign out</span></button></form>
+			<form method="POST" action="/signout" onsubmit={handleLogout}><button class="item btnrow" type="submit" title="Sign out" aria-label="Sign out"><Icon name="logout" size={20} /><span class="label">Sign out</span></button></form>
 		{:else}
 			<a class="item" href="/signin" title="Sign in / Sign up" aria-label="Sign in / Sign up" aria-current={pathname === '/signin' || pathname === '/signup' ? 'page' : undefined}><Icon name="login" size={20} /><span class="label">Sign in / Sign up</span></a>
 		{/if}

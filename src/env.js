@@ -25,5 +25,11 @@ export const variables = defineEnvVars({
 		static: true,
 		schema: required('PUBLIC_SUPABASE_KEY'),
 		description: 'Your Supabase public (anon or publishable) key'
-	}
+	},
+	PUBLIC_VAPID_KEY: {
+    public: true,
+    static: true,
+    schema: required('PUBLIC_VAPID_KEY'),
+    description: 'Public VAPID key for browser push subscriptions'
+}
 });

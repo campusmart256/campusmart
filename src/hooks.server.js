@@ -18,11 +18,28 @@ export const handle = async ({ event, resolve }) => {
 	 * The logged-in user, or null. getClaims() checks the login token properly
 	 * on every call (never trust getSession() in server code).
 	 */
-	event.locals.getUser = async () => {
-		const { data, error } = await event.locals.supabase.auth.getClaims();
-		if (error || !data?.claims?.sub) return null;
-		return { id: data.claims.sub, email: data.claims.email ?? null };
-	};
+
+/** @type {Promise<{ id: string, email: string | null } | null> | null} */
+let userPromise = null;
+
+event.locals.getUser = () => {
+    if (!userPromise) {
+        userPromise = (async () => {
+            const { data, error } =
+                await event.locals.supabase.auth.getClaims();
+
+            if (error || !data?.claims?.sub) return null;
+
+            return {
+                id: data.claims.sub,
+                email: data.claims.email ?? null
+            };
+        })();
+    }
+
+    return userPromise;
+};
+
 
 	return resolve(event, {
 		filterSerializedResponseHeaders: (name) => name === 'content-range' || name === 'x-supabase-api-version'

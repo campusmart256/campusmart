@@ -29,7 +29,9 @@
 		"#lib/*": "./src/lib/*"
 	},
 	"dependencies": {
+		"@block65/webcrypto-web-push": "^2.0.0",
 		"@supabase/ssr": "^0.12.7",
-		"@supabase/supabase-js": "^2.117.3"
+		"@supabase/supabase-js": "^2.117.3",
+		"web-push": "^3.6.7"
 	}
 }
